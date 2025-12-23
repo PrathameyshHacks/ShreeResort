@@ -1,0 +1,307 @@
+/* ================= RESET ================= */
+body {
+	margin: 0;
+	padding: 0;
+	overflow-x: hidden;
+}
+
+/* =====================================================
+   ORIGINAL BOOKING PAGE (kept as-is, but overridden later)
+===================================================== */
+.booking-page {
+	position: fixed;
+	font-family: Arial, sans-serif;
+	width: 100%;
+	height: 70vh;
+	padding-top: 0px;
+	margin: 0px;
+	background-color: antiquewhite;
+}
+
+/* Title */
+.booking-page h1 {
+	position: relative;
+	top: 20px;
+	text-align: center;
+	color: #0a4d91;
+	margin-bottom: 30px;
+}
+
+/* ================= ROOM LIST ================= */
+.room-list {
+	position: relative;
+	top: 15px;
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 20px;
+}
+
+/* ================= ROOM CARD ================= */
+.room-card {
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	width: 280px;
+	padding: 15px;
+	text-align: center;
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.room-card:hover {
+	transform: translateY(-6px);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.room-card img {
+	width: 100%;
+	height: 180px;
+	object-fit: cover;
+	border-radius: 6px;
+	margin-bottom: 10px;
+	cursor: pointer;
+}
+
+.room-card h3 {
+	color: #0a4d91;
+	margin: 8px 0;
+}
+
+.room-card p {
+	font-size: 14px;
+	color: #555;
+}
+
+.room-card .price {
+	font-weight: bold;
+	margin: 10px 0;
+}
+
+/* ================= BUTTONS ================= */
+.room-card button,
+.confirm-btn,
+.cancel-btn,
+.close-btn,
+.add-member-btn,
+.remove-member-btn {
+	transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.room-card button {
+	background: #0a4d91;
+	color: white;
+	border: none;
+	padding: 8px 14px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.room-card button:hover {
+	background: #083b70;
+	transform: scale(1.03);
+}
+
+/* ================= BOOKING MODAL ================= */
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 999;
+}
+
+.modal {
+	background: white;
+	padding: 20px;
+	border-radius: 8px;
+	width: 100%;
+	max-width: 600px;
+	max-height: 90vh;
+	overflow-y: auto;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.modal h2 {
+	color: #0a4d91;
+	text-align: center;
+	margin-bottom: 15px;
+}
+
+.modal form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.modal input,
+.modal select {
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+/* ================= DATE & PEOPLE ================= */
+.date-fields {
+	display: flex;
+	gap: 10px;
+}
+
+.date-fields > div {
+	flex: 1;
+}
+
+.people-count {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+
+/* ================= MEMBERS ================= */
+.members-section {
+	display: flex;
+	flex-direction: column;
+}
+
+.member-info {
+	border: 1px solid #ddd;
+	padding: 10px;
+	border-radius: 6px;
+	margin-bottom: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.add-member-btn,
+.remove-member-btn {
+	position: relative;
+	background: #0a4d91;
+	color: white;
+	border: none;
+	height: 20px;
+	border-radius: 4px;
+	cursor: pointer;
+	width: fit-content;
+}
+
+.memBt {
+
+	background: #0a4d91;
+	color: white;
+	padding: 10px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.add-member-btn:hover,
+.remove-member-btn:hover {
+	background: #083b70;
+	transform: scale(1.05);
+}
+
+/* ================= ACTION BUTTONS ================= */
+.confirm-btn {
+	background: #0a4d91;
+	color: white;
+	padding: 10px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.confirm-btn:hover {
+	background: #083b70;
+}
+
+.cancel-btn {
+	background: #999;
+	color: white;
+	padding: 10px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.cancel-btn:hover {
+	background: #777;
+}
+
+/* ================= IMAGE PREVIEW MODAL ================= */
+.image-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.7);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
+}
+
+.image-modal {
+	background: white;
+	padding: 20px;
+	border-radius: 10px;
+	max-width: 700px;
+	width: 90%;
+	max-height: 85vh;
+	overflow-y: auto;
+	text-align: center;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.image-gallery {
+	display: flex;
+	gap: 10px;
+	overflow-x: auto;
+	margin: 10px 0;
+	padding-bottom: 5px;
+}
+
+.image-gallery img {
+	width: 200px;
+	height: 150px;
+	object-fit: cover;
+	border-radius: 6px;
+}
+
+/* Close button */
+.close-btn {
+	background: #0a4d91;
+	color: white;
+	padding: 8px 16px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.close-btn:hover {
+	background: #083b70;
+}
+
+/* =====================================================
+   FINAL OVERRIDE (THIS FIXES NAVBAR GAP & SCROLL ISSUE)
+===================================================== */
+.booking-page {
+	position: relative;              /* overrides fixed safely */
+	width: 100%;
+	min-height: calc(100vh - 124px);  /* navbar-safe */
+	padding-top: 20px;
+	overflow-y: auto;
+}
+
+
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+	.date-fields,
+	.people-count {
+		flex-direction: column;
+	}
+
+	.booking-page {
+		padding-top: 10px;
+	}
+}

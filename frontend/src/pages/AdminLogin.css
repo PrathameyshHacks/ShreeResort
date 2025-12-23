@@ -1,0 +1,90 @@
+.admin-login-container {
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: rgb(199, 255, 199);
+	font-family: Arial, sans-serif;
+}
+
+.admin-login-box {
+	position: fixed;
+	width: 550px;
+	padding: 40px;
+	background: white;
+	border-radius: 15px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-login-box h1 {
+	text-align: center;
+	margin-bottom: 20px;
+	color: #0a4d91;
+}
+
+.admin-login-box input {
+	width: 100%;
+	padding: 10px;
+	margin-bottom: 12px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.login-options {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 13px;
+	margin-bottom: 15px;
+}
+
+.login-options label {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.forgot-link {
+	color: #590790;
+	text-decoration: none;
+}
+
+.forgot-link:hover {
+	color: #011fa6;
+	text-decoration: underline;
+}
+
+.admin-login-box button {
+	width: 100%;
+	padding: 10px;
+	background: #0a4d91;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	font-size: 15px;
+	cursor: pointer;
+}
+
+.admin-login-box button:hover {
+	background: #083b70;
+}
+
+.signup-text {
+	margin-top: 15px;
+	text-align: center;
+	font-size: 15px;
+	text-decoration: none;
+}
+
+.signup-text .adLn {
+
+	text-decoration: none;
+}
+
+.signup-text .adLn:hover {
+	color: #0a4d91;
+	text-decoration: underline;
+	font-weight: bold;
+}
+

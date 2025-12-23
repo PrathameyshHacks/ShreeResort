@@ -1,0 +1,199 @@
+.admin-bookings {
+	padding: 30px;
+	font-family: Arial, sans-serif;
+    position: relative;
+	background-color: rgb(216, 255, 215);
+	height: 90vh;
+}
+
+.admin-bookings h1 {
+	text-align: center;
+	color: #0a4d91;
+	margin-bottom: 25px;
+    top: 20px;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+	background-color: #ffe6fb;
+}
+
+
+th, td {
+	border: 1px solid #d6f1ff;
+	padding: 8px;
+	text-align: center;
+	font-size: 14px;
+}
+
+th {
+	background: #0a4d91;
+	color: white;
+}
+
+tr:nth-child(even) {
+	background: #f9f9f9;
+}
+
+tr:hover {
+	background: #eef3ff;
+	cursor: pointer;
+}
+
+.selected-row {
+	background: #dbe7ff !important;
+}
+
+button {
+	padding: 5px 10px;
+	border-radius: 4px;
+	border: none;
+	cursor: pointer;
+	background: #0a4d91;
+	color: white;
+	font-size: 13px;
+	transition: background 0.2s;
+}
+
+button:hover {
+	background: #083b70;
+}
+
+.checkin-btn {
+	background: #28a745;
+}
+
+.checkin-btn:hover {
+	background: #1e7e34;
+}
+
+.checkout-btn {
+	background: #dc3545;
+}
+
+.checkout-btn:hover {
+	background: #b02a37;
+}
+
+.edit-btn {
+	background: #ffc107;
+	color: #333;
+}
+
+.edit-btn:hover {
+	background: #e0a800;
+}
+
+.delete-btn {
+	background: #6c757d;
+}
+
+.delete-btn:hover {
+	background: #5a6268;
+}
+
+.status {
+	padding: 4px 8px;
+	border-radius: 4px;
+	color: white;
+	font-size: 12px;
+}
+
+.status.pending {
+	background: #ffc107;
+	color: #333;
+}
+
+.status.checked-in {
+	background: #28a745;
+}
+
+.status.checked-out {
+	background: #6c757d;
+}
+
+.preview-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,0.6);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 999;
+}
+
+.preview-modal {
+	background: white;
+	padding: 15px;
+	border-radius: 8px;
+	width: 90%;
+	max-width: 500px;
+}
+
+.preview-image {
+	width: 100%;
+	max-height: 400px;
+	object-fit: contain;
+}
+
+.close-btn {
+	margin-top: 10px;
+	padding: 6px 12px;
+	background: #dc3545;
+	color: white;
+	border-radius: 4px;
+}
+
+.close-btn:hover {
+	background: #b02a37;
+}
+
+/* Add/Edit Booking Form */
+.booking-form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 20px;
+	justify-content: center;
+}
+
+.booking-form input,
+.booking-form select {
+	padding: 6px 10px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+	font-size: 14px;
+	background-color: #edffff;
+}
+
+.booking-form button {
+	background: #0a4d91;
+	color: white;
+	padding: 6px 15px;
+}
+
+.booking-form button:hover {
+	background: #083b70;
+}
+
+/* Download CSV Button */
+.download-btn {
+	background: #17a2b8;
+	padding: 6px 15px;
+	margin-bottom: 10px;
+	border-radius: 4px;
+}
+
+.download-btn:hover {
+	background: #117a8b;
+}
+
+.admin-actions {
+	margin-top: 20px;
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}

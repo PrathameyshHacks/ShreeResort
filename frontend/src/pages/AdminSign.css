@@ -1,0 +1,78 @@
+.allP {
+	height: 100vh;
+	position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: rgb(199, 255, 199);
+}
+
+.AdminCont {
+	position: fixed;
+	width: 550px;
+	padding: 40px;
+	background: white;
+	border-radius: 15px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.AdminCont h1 {
+	text-align: center;
+	color: #333;
+	margin-bottom: 25px;
+}
+
+/* INPUTS */
+.AdForm input[type="text"],
+.AdForm input[type="email"],
+.AdForm input[type="tel"],
+.AdForm input[type="password"] {
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	margin-bottom: 15px;
+	font-size: 14px;
+}
+
+/* PASSWORD RULES */
+.AdForm .password-requirements {
+	font-size: 14px;
+	color: #393939;
+	list-style-type: disc;
+	padding-left: 20px;
+	margin-bottom: 20px;
+}
+
+/* BUTTON */
+.AdForm button {
+	width: 100%;
+	padding: 12px;
+	background-color: #191991;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 16px;
+}
+
+.AdForm button:hover {
+	background-color: #1525d2;
+}
+
+/* LOGIN LINK */
+.AdminCont p {
+	text-align: center;
+	margin-top: 15px;
+	font-size: 16px;
+}
+
+.AdminCont .adLl {
+	color: #6a1b9a;
+	text-decoration: none;
+}
+
+.AdminCont .adLl:hover {
+	text-decoration: underline;
+	font-weight: bold;
+}
