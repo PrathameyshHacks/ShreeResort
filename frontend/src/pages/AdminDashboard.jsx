@@ -15,6 +15,8 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
+  const API = process.env.REACT_APP_API_URL;
+
 
 	return (
 		<div className="admin-dashboard">

@@ -6,6 +6,9 @@ import "./AdminSign.css";
 export default function AdminSign() {
   const navigate = useNavigate();
 
+  const API = process.env.REACT_APP_API_URL;
+
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -54,7 +57,7 @@ export default function AdminSign() {
     try {
       setLoading(true);
 
-      await axios.post("http://localhost:5000/api/admin/register", formData);
+      await axios.post(`${API}/api/admin/register`, formData);
 
       alert("Admin registered successfully");
       navigate("/login");

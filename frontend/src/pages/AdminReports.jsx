@@ -28,6 +28,9 @@ export default function AdminReports() {
 
   const navigate = useNavigate();
 
+  const API = process.env.REACT_APP_API_URL;
+
+
   // Authentication check
   useEffect(() => {
     const token =
@@ -48,7 +51,7 @@ export default function AdminReports() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/bookings");
+        const res = await axios.get(`${API}/api/bookings`);
         const sortedTrans = res.data.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );

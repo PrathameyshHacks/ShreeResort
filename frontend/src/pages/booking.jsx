@@ -6,6 +6,10 @@ import "./Booking.css";
 
 export default function BookingPage() {
 
+
+	const API = process.env.REACT_APP_API_URL;
+
+
 	const today = new Date().toISOString().split("T")[0];
 
 	const [rooms, setRooms] = useState([]);
@@ -31,10 +35,10 @@ export default function BookingPage() {
 	useEffect(() => {
 		const fetchRooms = async () => {
 			try {
-				const res = await axios.get("http://localhost:5000/api/rooms");
+				const res = await axios.get(`${API}/api/rooms`);
 				const updated = res.data.map(r => ({
 					...r,
-					image: `http://localhost:5000${r.image}`
+					image: `${API}${r.image}`
 				}));
 				setRooms(updated);
 			} catch (err) {
@@ -152,7 +156,7 @@ const handleSubmit = async (e) => {
 		data.append("members", JSON.stringify(formData.members));
 
 		await axios.post(
-			"http://localhost:5000/api/bookings",
+			`${API}/api/bookings`,
 			data,
 			{ headers: { "Content-Type": "multipart/form-data" } }
 		);

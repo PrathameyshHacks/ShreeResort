@@ -18,6 +18,8 @@ export default function AdminBookings() {
     }
   }, [navigate]);
 
+  const API = process.env.REACT_APP_API_URL;
+
 
 	const roomPrices = {
 		"AC Deluxe Room": 1200,
@@ -50,7 +52,7 @@ export default function AdminBookings() {
 	useEffect(() => {
 		const fetchBookings = async () => {
 			try {
-				const res = await axios.get("http://localhost:5000/api/bookings");
+				const res = await axios.get(`${API}/api/bookings`);
 				setBookings(res.data);
 			} catch (err) {
 				console.error("Error fetching bookings:", err);
@@ -84,7 +86,7 @@ export default function AdminBookings() {
 	useEffect(() => {
 	const fetchGuests = async () => {
 		try {
-			const res = await axios.get("http://localhost:5000/api/guests");
+			const res = await axios.get(`${API}/api/guests`);
 			setGuests(res.data);
 		} catch (err) {
 			console.error("Error fetching guests:", err);
@@ -138,7 +140,7 @@ export default function AdminBookings() {
 				);
 			}
 
-			await axios.put(`http://localhost:5000/api/bookings/${id}`, updatedBooking);
+			await axios.put(`${API}/api/bookings/${id}`, updatedBooking);
 			setBookings((prev) =>
 				prev.map((b) => (b._id === id ? updatedBooking : b))
 			);
@@ -149,7 +151,7 @@ export default function AdminBookings() {
 
 	const handlePreview = (fileUrl, type) => {
 		setPreviewType(type);
-		setPreviewDoc(fileUrl.startsWith("http") ? fileUrl : `http://localhost:5000/uploads/${fileUrl}`);
+		setPreviewDoc(fileUrl.startsWith("http") ? fileUrl : `${API}/uploads/${fileUrl}`);
 	};
 
 	const handleFormSubmit = async (e) => {
@@ -181,16 +183,16 @@ export default function AdminBookings() {
 			if (form.docFile) data.append("docFile", form.docFile);
 
 			if (editingId) {
-				await axios.put(`http://localhost:5000/api/bookings/${editingId}`, data, {
+				await axios.put(`${API}/api/bookings/${editingId}`, data, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 			} else {
-				await axios.post("http://localhost:5000/api/bookings", data, {
+				await axios.post(`${API}/api/bookings`, data, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 			}
 
-			const res = await axios.get("http://localhost:5000/api/bookings");
+			const res = await axios.get(`${API}/api/bookings`);
 			setBookings(res.data);
 			setEditingId(null);
 			setForm({
@@ -226,7 +228,7 @@ export default function AdminBookings() {
 	const handleDelete = async (id) => {
 		if (window.confirm("Are you sure you want to delete this booking?")) {
 			try {
-				await axios.delete(`http://localhost:5000/api/bookings/${id}`);
+				await axios.delete(`${API}/api/bookings/${id}`);
 				setBookings((prev) => prev.filter((b) => b._id !== id));
 			} catch (err) {
 				console.error("Error deleting booking:", err);
@@ -272,14 +274,14 @@ export default function AdminBookings() {
 		try {
 			if (editingGuestId) {
 				await axios.put(
-					`http://localhost:5000/api/guests/${editingGuestId}`,
+					`${API}/api/guests/${editingGuestId}`,
 					guestForm
 				);
 			} else {
-				await axios.post("http://localhost:5000/api/guests", guestForm);
+				await axios.post(`${API}/api/guests`, guestForm);
 			}
 
-			const res = await axios.get("http://localhost:5000/api/guests");
+			const res = await axios.get(`${API}/api/guests`);
 			setGuests(res.data);
 			resetGuestForm();
 		} catch (err) {
@@ -308,7 +310,7 @@ export default function AdminBookings() {
 		if (!window.confirm("Delete this guest?")) return;
 
 		try {
-			await axios.delete(`http://localhost:5000/api/guests/${id}`);
+			await axios.delete(`${API}/api/guests/${id}`);
 			setGuests(guests.filter(g => g._id !== id));
 		} catch (err) {
 			console.error("Delete guest error:", err);

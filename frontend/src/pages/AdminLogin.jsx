@@ -11,6 +11,9 @@ export default function AdminLogin() {
 
   const navigate = useNavigate();
 
+  const API = process.env.REACT_APP_API_URL;
+
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -23,7 +26,7 @@ export default function AdminLogin() {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost:5000/api/admin/login",
+        `${API}/api/admin/login`,
         { email, password }
       );
 
