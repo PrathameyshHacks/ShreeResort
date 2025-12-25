@@ -11,6 +11,77 @@
 	margin-bottom: 30px;
 }
 
+/* DASHBOARD CARDS */
+.dashboard-cards {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	justify-content: center;
+	margin-bottom: 30px;
+}
+
+.dashboard-cards .card {
+	background: white;
+	padding: 20px 25px;
+	border-radius: 8px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+	text-align: center;
+	min-width: 180px;
+	flex: 1;
+}
+
+.dashboard-cards .card h3 {
+	font-size: 16px;
+	color: #0a4d91;
+	margin-bottom: 10px;
+}
+
+.dashboard-cards .card p {
+	font-size: 20px;
+	font-weight: bold;
+	color: #333;
+}
+
+/* FILTERS & BUTTONS */
+.tblOpt {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px;
+	align-items: center;
+	margin-bottom: 20px;
+	font-family: Arial, sans-serif;
+}
+
+.tblOpt label {
+	font-size: 16px;
+	margin-right: 5px;
+}
+
+.tblOpt select,
+.tblOpt input[type="date"],
+.tblOpt input[type="text"] {
+	padding: 5px 8px;
+	height: 28px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+	font-size: 14px;
+	background-color: #edffff;
+}
+
+.tblOpt button {
+	padding: 7px 15px;
+	border-radius: 4px;
+	border: none;
+	background-color: #0a4d91;
+	color: white;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.tblOpt button:hover {
+	background-color: #083b70;
+}
+
 /* TABLE */
 .table-wrapper {
 	overflow-x: auto;
@@ -18,6 +89,7 @@
 	padding: 20px;
 	border-radius: 8px;
 	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+	margin-top: 20px;
 }
 
 table {
@@ -62,6 +134,22 @@ tr:hover {
 	background: #17a2b8;
 }
 
+/* CHART SECTION */
+.chart-section {
+	background: white;
+	padding: 20px;
+	border-radius: 8px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+
+.chart-section h2 {
+	text-align: center;
+	color: #0a4d91;
+	margin-bottom: 20px;
+}
+
 /* REVIEWS */
 .reviews-section {
 	margin-top: 50px;
@@ -95,4 +183,21 @@ tr:hover {
 	font-size: 14px;
 	color: #555;
 	line-height: 1.4;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+	.dashboard-cards {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.tblOpt {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.tblOpt button {
+		width: 100%;
+	}
 }

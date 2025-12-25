@@ -1,17 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import "./Booking.css";
-
-import ac from "../images/room.jpg";
-import noac from "../images/ac.jpg";
-import hall from "../images/nonac.jpg";
 import Footer from "../components/Footer";
+import axios from "axios";
+import "./Booking.css";
 
 export default function BookingPage() {
 
-	/* ================= VALIDATION HELPERS ================= */
 	const today = new Date().toISOString().split("T")[0];
 
+	const [rooms, setRooms] = useState([]);
+	const [loading, setLoading] = useState(true);
 	const [selectedRoom, setSelectedRoom] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [showImageModal, setShowImageModal] = useState(false);
@@ -19,136 +17,36 @@ export default function BookingPage() {
 	const [formData, setFormData] = useState({
 		name: "",
 		contact: "",
-		email: "",
+		gender: "",
+		age: "",
 		checkin: "",
 		checkout: "",
-		idfile: null,
 		numAdults: 1,
 		numChildren: 0,
-		members: [{ name: "", gender: "", age: "" }],
+		idfile: null,
+		members: []
 	});
 
-	const rooms = [
-		{
-			id: 1,
-			title: "Non-AC Standard Room",
-			price: 800,
-			images: [ac, noac, hall],
-			description: "Cozy room with all basic amenities for a comfortable stay.",
-		},
-		{
-			id: 2,
-			title: "AC Deluxe Room",
-			price: 1200,
-			images: [noac, hall, ac],
-			description: "Spacious AC room with modern interiors & wifi enabled.",
-		},
-		{
-			id: 3,
-			title: "Family Suite",
-			price: 1800,
-			images: [hall, ac, noac],
-			description: "Perfect for families with extra space and comfort.",
-		},
-	];
+	/* ================= FETCH ROOMS ================= */
+	useEffect(() => {
+		const fetchRooms = async () => {
+			try {
+				const res = await axios.get("http://localhost:5000/api/rooms");
+				const updated = res.data.map(r => ({
+					...r,
+					image: `http://localhost:5000${r.image}`
+				}));
+				setRooms(updated);
+			} catch (err) {
+				console.error(err);
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetchRooms();
+	}, []);
 
-	/* ================= HANDLERS ================= */
-
-	const handleInputChange = (e) => {
-		const { name, value } = e.target;
-
-		// Name → only alphabets & space, max 30
-		if (name === "name") {
-			if (!/^[A-Za-z ]*$/.test(value)) return;
-
-			setFormData({
-				...formData,
-				[name]: value.slice(0, 30),
-			});
-			return;
-		}
-
-		// Contact → only numbers, max 10 digits
-		if (name === "contact") {
-			if (!/^[0-9]*$/.test(value)) return;
-
-			setFormData({
-				...formData,
-				[name]: value.slice(0, 10),
-			});
-			return;
-		}
-
-		// Default update
-		setFormData({
-			...formData,
-			[name]: value,
-		});
-	};
-
-
-	const handleMemberChange = (index, e) => {
-		const updatedMembers = [...formData.members];
-		const { name, value } = e.target;
-
-		if (name === "age" && (value < 1 || value > 100)) {
-			return;
-		}
-
-		updatedMembers[index][name] = value;
-		setFormData({ ...formData, members: updatedMembers });
-	};
-
-	const addMember = () => {
-		if (formData.members.length >= 4) {
-			alert("Maximum 4 members allowed per room");
-			return;
-		}
-		setFormData({
-			...formData,
-			members: [...formData.members, { name: "", gender: "", age: "" }],
-		});
-	};
-
-	const removeMember = (index) => {
-		const updated = formData.members.filter((_, i) => i !== index);
-		setFormData({ ...formData, members: updated });
-	};
-
-	const handleFileChange = (e) => {
-		const file = e.target.files[0];
-		if (!file) return;
-
-		const maxSize = 1024 * 1024; // 1MB
-		if (file.size > maxSize) {
-			alert("File size must be less than 1MB");
-			e.target.value = null;
-			return;
-		}
-		setFormData({ ...formData, idfile: file });
-	};
-
-	const openModal = (room) => {
-		setSelectedRoom(room);
-		setIsModalOpen(true);
-	};
-
-	const closeModal = () => {
-		setIsModalOpen(false);
-		setSelectedRoom(null);
-	};
-
-	const openImagePreview = (room) => {
-		setSelectedRoom(room);
-		setShowImageModal(true);
-	};
-
-	const closeImagePreview = () => {
-		setShowImageModal(false);
-		setSelectedRoom(null);
-	};
-
-
+	/* ================= HELPERS ================= */
 	const getMaxCheckoutDate = () => {
 		if (!formData.checkin) return "";
 		const d = new Date(formData.checkin);
@@ -156,150 +54,279 @@ export default function BookingPage() {
 		return d.toISOString().split("T")[0];
 	};
 
+	/* ================= INPUT HANDLERS ================= */
+	const handleInputChange = (e) => {
+		const { name, value } = e.target;
+
+		if (name === "name") {
+			if (!/^[A-Za-z ]*$/.test(value)) return;
+			setFormData({ ...formData, name: value.slice(0, 30) });
+			return;
+		}
+
+		if (name === "contact") {
+			if (!/^[0-9]*$/.test(value)) return;
+			setFormData({ ...formData, contact: value.slice(0, 10) });
+			return;
+		}
+
+		if (name === "age" && (value < 1 || value > 100)) return;
+
+		setFormData({ ...formData, [name]: value });
+	};
+
+	const handleMemberChange = (index, e) => {
+		const { name, value } = e.target;
+		const updated = [...formData.members];
+
+		if (name === "name" && !/^[A-Za-z ]*$/.test(value)) return;
+		if (name === "contact" && !/^[0-9]*$/.test(value)) return;
+		if (name === "age" && (value < 1 || value > 100)) return;
+
+		updated[index] = { ...updated[index], [name]: value };
+		setFormData({ ...formData, members: updated });
+	};
+
+	const addMember = () => {
+		if (formData.members.length >= 3) {
+			alert("Maximum 4 people including main guest");
+			return;
+		}
+		setFormData({
+			...formData,
+			members: [...formData.members, { name: "", contact: "", gender: "", age: "" }]
+		});
+	};
+
+	const removeMember = (index) => {
+		setFormData({
+			...formData,
+			members: formData.members.filter((_, i) => i !== index)
+		});
+	};
+
+	const handleFileChange = (e) => {
+		const file = e.target.files[0];
+		if (!file) return;
+
+		if (file.size > 1024 * 1024) {
+			alert("File must be under 1MB");
+			e.target.value = null;
+			return;
+		}
+		setFormData({ ...formData, idfile: file });
+	};
 
 	/* ================= SUBMIT ================= */
+const handleSubmit = async (e) => {
+	e.preventDefault();
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
+	if (formData.checkin < today) {
+		alert("Check-in date cannot be past");
+		return;
+	}
 
-		if (formData.checkin < today) {
-			alert("Check-in date cannot be in the past");
-			return;
-		}
+	if (new Date(formData.checkout) <= new Date(formData.checkin)) {
+		alert("Check-out must be after check-in");
+		return;
+	}
 
-		if (new Date(formData.checkout) <= new Date(formData.checkin)) {
-			alert("Check-out date must be after check-in date");
-			return;
-		}
+	if (!formData.idfile) {
+		alert("Upload ID proof");
+		return;
+	}
 
-		if (!formData.idfile) {
-			alert("Please upload ID proof");
-			return;
-		}
+	try {
+		const data = new FormData();
+
+		data.append("name", formData.name);
+		data.append("contact", formData.contact);
+		data.append("room", selectedRoom.title);
+		data.append("checkin", formData.checkin);
+		data.append("checkout", formData.checkout);
+		data.append("adult", formData.numAdults);
+		data.append("child", formData.numChildren);
+		data.append("docFile", formData.idfile);
+
+		// Send members as JSON string
+		data.append("members", JSON.stringify(formData.members));
+
+		await axios.post(
+			"http://localhost:5000/api/bookings",
+			data,
+			{ headers: { "Content-Type": "multipart/form-data" } }
+		);
 
 		alert(`✅ Booking Confirmed for ${selectedRoom.title}`);
 
+		// Reset form
 		setFormData({
 			name: "",
 			contact: "",
-			email: "",
+			gender: "",
+			age: "",
 			checkin: "",
 			checkout: "",
-			idfile: null,
 			numAdults: 1,
 			numChildren: 0,
-			members: [{ name: "", gender: "", age: "" }],
+			idfile: null,
+			members: []
 		});
 
-		closeModal();
-	};
+		setIsModalOpen(false);
+
+	} catch (err) {
+		console.error(err);
+		alert(err.response?.data?.message || "❌ Booking failed");
+	}
+};
+
 
 	return (
 		<>
 			<Navbar />
+
 			<div className="booking-page">
 				<h1>🛏️ Book Your Stay</h1>
 
-				<div className="room-list">
-					{rooms.map((room) => (
-						<div key={room.id} className="room-card">
-							<img
-								src={room.images[0]}
-								alt={room.title}
-								onClick={() => openImagePreview(room)}
-								style={{ cursor: "pointer" }}
-							/>
-							<h3>{room.title}</h3>
-							<p>{room.description}</p>
-							<p className="price">₹ {room.price} / night</p>
-							<button onClick={() => openModal(room)}>Book Now</button>
-						</div>
-					))}
-				</div>
-
-				
-
-				{/* IMAGE PREVIEW MODAL */}
-				{showImageModal && selectedRoom && (
-					<div className="image-modal-overlay" onClick={closeImagePreview}>
-						<div className="image-modal" onClick={(e) => e.stopPropagation()}>
-							<h2>{selectedRoom.title}</h2>
-							<div className="image-gallery">
-								{selectedRoom.images.map((img, i) => (
-									<img key={i} src={img} alt="room" />
-								))}
+				{loading ? <p>Loading rooms...</p> : (
+					<div className="room-list">
+						{rooms.map(room => (
+							<div key={room._id} className="room-card">
+								<img
+									src={room.image}
+									alt={room.title}
+									onClick={() => {
+										setSelectedRoom(room);
+										setShowImageModal(true);
+									}}
+								/>
+								<h3>{room.title}</h3>
+								<p>{room.description}</p>
+								<p className="price">₹ {room.price} / night</p>
+								<button onClick={() => {
+									setSelectedRoom(room);
+									setIsModalOpen(true);
+								}}>
+									Book Now
+								</button>
 							</div>
-							<button onClick={closeImagePreview} className="close-btn">Close</button>
-						</div>
+						))}
 					</div>
 				)}
-
-				
-
-				{/* BOOKING MODAL */}
-				{isModalOpen && selectedRoom && (
-					<div className="modal-overlay">
-						<div className="modal">
-							<h2>Booking: {selectedRoom.title}</h2>
-
-							<form onSubmit={handleSubmit}>
-								<input type="text" name="name" placeholder="Full Name" value={formData.name} pattern="[A-Za-z ]{1,50}" onChange={handleInputChange} required />
-
-								<input type="tel" name="contact" placeholder="Contact No" value={formData.contact} pattern="[0-9]{10}" maxLength="10" onChange={handleInputChange} required/>
-
-								<input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} required />
-
-								<div className="date-fields">
-									<div>
-										<label>Check-in</label>
-										<input type="date" name="checkin" min={today} value={formData.checkin} onChange={handleInputChange} required />
-									</div>
-									<div>
-										<label>Check-out</label>
-										<input type="date" name="checkout" min={formData.checkin} max={getMaxCheckoutDate()} value={formData.checkout} onChange={handleInputChange} required />
-									</div>
-								</div>
-
-								<div className="people-count">
-									<label>Adults</label>
-									<input type="number" name="numAdults" min="1" max="2" value={formData.numAdults} onChange={handleInputChange} />
-									<label>Children</label>
-									<input type="number" name="numChildren" min="0" max="2" value={formData.numChildren} onChange={handleInputChange} />
-								</div>
-
-								<div className="members-section">
-									{formData.members.map((m, i) => (
-										<div key={i} className="member-info">
-											<input type="text" name="name" placeholder="Name" value={m.name} pattern="[A-Za-z ]{1,50}"  onChange={(e) => handleMemberChange(i, e)} required />
-											<select name="gender" value={m.gender} onChange={(e) => handleMemberChange(i, e)} required>
-												<option value="">Gender</option>
-												<option>Male</option>
-												<option>Female</option>
-												<option>Other</option>
-											</select>
-											<input type="number" name="age" placeholder="Age" min="1" max="100" value={m.age} onChange={(e) => handleMemberChange(i, e)} required />
-											{formData.members.length > 1 && (
-												<button type="button" onClick={() => removeMember(i)}>Remove</button>
-											)}
-										</div>
-									))}
-									<button type="button" className="memBt"onClick={addMember}>Add Member</button>
-								</div>
-
-								<input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} required />
-
-								<button type="submit" className="confirm-btn">Confirm Booking</button>
-								<button type="button" className="cancel-btn" onClick={closeModal}>Cancel</button>
-							</form>
-						</div>
-					</div>
-				)}
-
-				
 			</div>
 
-			<Footer/>
-      
-	</>
+			{/* IMAGE PREVIEW MODAL */}
+			{showImageModal && selectedRoom && (
+				<div className="image-modal-overlay" onClick={() => setShowImageModal(false)}>
+					<div className="image-modal" onClick={e => e.stopPropagation()}>
+						<h2>{selectedRoom.title}</h2>
+						<img src={selectedRoom.image} alt="Preview" />
+						<button className="close-btn" onClick={() => setShowImageModal(false)}>
+							Close
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* BOOKING MODAL */}
+			{isModalOpen && selectedRoom && (
+				<div className="modal-overlay">
+					<div className="modal">
+						<h2>Booking: {selectedRoom.title}</h2>
+
+						<form onSubmit={handleSubmit}>
+
+							<input name="name" placeholder="Full Name"
+								value={formData.name} onChange={handleInputChange} required />
+
+							<input name="contact" placeholder="Contact No"
+								value={formData.contact} onChange={handleInputChange} required />
+
+							<select name="gender" value={formData.gender}
+								onChange={handleInputChange} required>
+								<option value="">Gender</option>
+								<option>Male</option>
+								<option>Female</option>
+								<option>Other</option>
+							</select>
+
+							<input type="number" name="age" placeholder="Age"
+								value={formData.age} onChange={handleInputChange} required />
+
+							{/* ✅ CHECK-IN / CHECK-OUT RESTORED */}
+							<div className="date-fields">
+								<div>
+									<label>Check-in</label>
+									<input type="date" name="checkin"
+										min={today}
+										value={formData.checkin}
+										onChange={handleInputChange}
+										required />
+								</div>
+
+								<div>
+									<label>Check-out</label>
+									<input type="date" name="checkout"
+										min={formData.checkin}
+										max={getMaxCheckoutDate()}
+										value={formData.checkout}
+										onChange={handleInputChange}
+										required />
+								</div>
+							</div>
+
+							{/* ADULT / CHILD */}
+							<div className="people-count">
+								<label>Adults</label>
+								<input type="number" name="numAdults" min="1" max="2"
+									value={formData.numAdults} onChange={handleInputChange} />
+
+								<label>Children</label>
+								<input type="number" name="numChildren" min="0" max="2"
+									value={formData.numChildren} onChange={handleInputChange} />
+							</div>
+
+							{/* MEMBERS */}
+							<div className="members-section">
+								{formData.members.map((m, i) => (
+									<div key={i} className="member-info">
+										<input name="name" placeholder="Name"
+											value={m.name} onChange={(e) => handleMemberChange(i, e)} />
+
+										<input name="contact" placeholder="Contact"
+											value={m.contact} onChange={(e) => handleMemberChange(i, e)} />
+
+										<select name="gender"
+											value={m.gender} onChange={(e) => handleMemberChange(i, e)}>
+											<option value="">Gender</option>
+											<option>Male</option>
+											<option>Female</option>
+											<option>Other</option>
+										</select>
+
+										<input name="age" placeholder="Age"
+											value={m.age} onChange={(e) => handleMemberChange(i, e)} />
+
+										<button type="button" onClick={() => removeMember(i)}>Remove</button>
+									</div>
+								))}
+								<button type="button" className="memBt" onClick={addMember}>
+									Add Member
+								</button>
+							</div>
+
+							<input type="file" accept=".jpg,.png,.pdf"
+								onChange={handleFileChange} required />
+
+							<button type="submit">Confirm Booking</button>
+							<button type="button" onClick={() => setIsModalOpen(false)}>Cancel</button>
+						</form>
+					</div>
+				</div>
+			)}
+
+			<Footer />
+		</>
 	);
 }

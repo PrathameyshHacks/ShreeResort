@@ -1,10 +1,13 @@
 .admin-bookings {
 	padding: 30px;
 	font-family: Arial, sans-serif;
-    position: relative;
-	background-color: rgb(216, 255, 215);
-	height: 90vh;
+	background-color: rgb(203, 255, 202);
+
+	/* 🔥 FIX */
+	min-height: 100vh;
+	overflow-x: auto;
 }
+
 
 .admin-bookings h1 {
 	text-align: center;
@@ -13,20 +16,24 @@
     top: 20px;
 }
 
-table {
+.admin-bookings table {
 	width: 100%;
+	min-width: 1300px;  /* 🔥 ensures columns don't squash */
 	border-collapse: collapse;
 	margin-top: 20px;
 	background-color: #ffe6fb;
 }
 
 
+
 th, td {
 	border: 1px solid #d6f1ff;
-	padding: 8px;
+	padding: 10px;
 	text-align: center;
 	font-size: 14px;
+	white-space: nowrap; /* 🔥 prevents ugly wrapping */
 }
+
 
 th {
 	background: #0a4d91;
@@ -155,7 +162,8 @@ button:hover {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
-	margin-bottom: 20px;
+	margin-bottom: 10px;
+	margin-top: 10px;
 	justify-content: center;
 }
 
@@ -196,4 +204,24 @@ button:hover {
 	justify-content: center;
 	gap: 12px;
 	flex-wrap: wrap;
+}
+
+
+.addBook {
+
+	position: relative;
+	background-color: #d8db20;
+	padding: 10px;
+	border-radius: 10px;
+
+}
+
+.secTt {
+
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 20px;
+	margin-top: 0px;
 }

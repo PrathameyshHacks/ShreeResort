@@ -1,114 +1,246 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import AdminNav from "../components/AdminNav";
 import Footer from "../components/Footer";
+import * as XLSX from "xlsx"; // For Excel export
+import { useNavigate } from "react-router-dom";
 import "./AdminReports.css";
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 export default function AdminReports() {
-	const transactions = [
-		{
-			id: 1,
-			guest: "Sahil Gogavle",
-			room: "AC Deluxe",
-			roomNo: 203,
-			date: "2025-09-10",
-			totalBill: "₹5,000",
-			payBy: "Online",
-		},
-		{
-			id: 2,
-			guest: "Prathamesh Acharekar",
-			room: "Family Suite",
-			roomNo: 3,
-			date: "2025-09-12",
-			totalBill: "₹3,200",
-			payBy: "Cash",
-		},
-		{
-			id: 3,
-			guest: "Yash More",
-			room: "Non-AC Standard",
-			roomNo: 108,
-			date: "2025-09-14",
-			totalBill: "₹4,500",
-			payBy: "Online",
-		},
-	];
+  const [transactions, setTransactions] = useState([]);
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [roomFilter, setRoomFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-	const reviews = [
-		{
-			id: 1,
-			name: "Sahil Gogavle",
-			text: "Excellent stay! Very clean rooms and friendly staff.",
-		},
-		{
-			id: 2,
-			name: "Prathamesh Acharekar",
-			text: "Good experience overall. Food quality can improve.",
-		},
-		{
-			id: 3,
-			name: "Yash More",
-			text: "Comfortable rooms but parking space is limited.",
-		},
-	];
+  const navigate = useNavigate();
 
-	return (
-		<>
-			<AdminNav />
+  // Authentication check
+  useEffect(() => {
+    const token =
+      localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
 
-			<div className="admin-reports">
-				<h1>📊 Transactions Report</h1>
+  // Dummy reviews
+  const reviews = [
+    { id: 1, name: "Sahil Gogavle", text: "Excellent stay! Very clean rooms and friendly staff." },
+    { id: 2, name: "Prathamesh Acharekar", text: "Good experience overall. Food quality can improve." },
+    { id: 3, name: "Yash More", text: "Comfortable rooms but parking space is limited." },
+  ];
 
-				{/* TRANSACTION TABLE */}
-				<div className="table-wrapper">
-					<table>
-						<thead>
-							<tr>
-								<th>ID</th>
-								<th>Guest Name</th>
-								<th>Room</th>
-								<th>Room No</th>
-								<th>Date</th>
-								<th>Total Bill</th>
-								<th>Pay By</th>
-							</tr>
-						</thead>
-						<tbody>
-							{transactions.map((t) => (
-								<tr key={t.id}>
-									<td>{t.id}</td>
-									<td>{t.guest}</td>
-									<td>{t.room}</td>
-									<td>{t.roomNo}</td>
-									<td>{t.date}</td>
-									<td>{t.totalBill}</td>
-									<td>
-										<span className={`pay ${t.payBy.toLowerCase()}`}>
-											{t.payBy}
-										</span>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+  // Fetch bookings
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/bookings");
+        const sortedTrans = res.data.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setTransactions(sortedTrans);
+        setFilteredTransactions(sortedTrans);
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+      }
+    };
+    fetchTransactions();
+  }, []);
 
-				{/* REVIEWS & SUGGESTIONS */}
-				<div className="reviews-section">
-					<h2>📝 Reviews & Suggestions</h2>
+  // Filter handlers
+  const handleMonthFilterChange = (e) => {
+    const month = e.target.value;
+    setMonthFilter(month);
+    applyFilters(roomFilter, statusFilter, month);
+  };
 
-					<div className="reviews-list">
-						{reviews.map((r) => (
-							<div key={r.id} className="review-card">
-								<h4>{r.name}</h4>
-								<p>{r.text}</p>
-							</div>
-						))}
-					</div>
-				</div>
-			</div>
+  const handleRoomFilterChange = (e) => {
+    const room = e.target.value;
+    setRoomFilter(room);
+    applyFilters(room, statusFilter, monthFilter);
+  };
 
-			<Footer />
-		</>
-	);
+  const handleStatusFilterChange = (e) => {
+    const status = e.target.value;
+    setStatusFilter(status);
+    applyFilters(roomFilter, status, monthFilter);
+  };
+
+  const applyFilters = (room, status, month) => {
+    let filtered = [...transactions];
+    if (room) filtered = filtered.filter((t) => t.room === room);
+    if (status) filtered = filtered.filter((t) => t.status === status);
+    if (month !== "") filtered = filtered.filter(
+      (t) => new Date(t.checkin).getMonth() === parseInt(month, 10)
+    );
+    setFilteredTransactions(filtered);
+  };
+
+  // Excel download
+  const downloadSpreadsheet = () => {
+    const ws = XLSX.utils.json_to_sheet(filteredTransactions);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+    XLSX.writeFile(wb, "transactions_report.xlsx");
+  };
+
+  // Dashboard data
+  const totalBookings = transactions.length;
+  const totalRevenue = transactions.reduce((sum, t) => sum + (t.totalBill || 0), 0);
+  const roomsOccupiedToday = transactions.filter(
+    (t) =>
+      new Date(t.checkin) <= new Date() &&
+      new Date(t.checkout) >= new Date()
+  ).length;
+
+  // Chart data
+  const roomTypes = ["AC Deluxe Room", "Non-AC Standard Room", "Family Suite"];
+  const bookingsPerRoom = roomTypes.map(
+    (r) => transactions.filter((t) => t.room === r).length
+  );
+  const chartData = {
+    labels: roomTypes,
+    datasets: [
+      {
+        label: "Bookings",
+        data: bookingsPerRoom,
+        backgroundColor: ["#0a4d91", "#17a2b8", "#28a745"],
+      },
+    ],
+  };
+
+  return (
+    <>
+      <AdminNav />
+
+      <div className="admin-reports">
+        <h1>📊 Transactions Report</h1>
+
+        {/* Dashboard Cards */}
+        <div className="dashboard-cards">
+          <div className="card">
+            <h3>Total Bookings</h3>
+            <p>{totalBookings}</p>
+          </div>
+          <div className="card">
+            <h3>Total Revenue</h3>
+            <p>₹ {totalRevenue}</p>
+          </div>
+          <div className="card">
+            <h3>Occupied Rooms Today</h3>
+            <p>{roomsOccupiedToday}</p>
+          </div>
+        </div>
+
+        {/* Filters and Download */}
+        <div className="tblOpt">
+          <div className="filter-section">
+            <label>Month:</label>
+            <select value={monthFilter} onChange={handleMonthFilterChange}>
+              <option value="">All</option>
+              <option value="0">January</option>
+              <option value="1">February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10">November</option>
+              <option value="11">December</option>
+            </select>
+
+            <label style={{ marginLeft: "20px" }}>Room:</label>
+            <select value={roomFilter} onChange={handleRoomFilterChange}>
+              <option value="">All</option>
+              {roomTypes.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+
+            <label style={{ marginLeft: "20px" }}>Status:</label>
+            <select value={statusFilter} onChange={handleStatusFilterChange}>
+              <option value="">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Checked In">Checked In</option>
+              <option value="Checked Out">Checked Out</option>
+            </select>
+          </div>
+
+          <button onClick={downloadSpreadsheet} className="download-btn">
+            Download as Spreadsheet
+          </button>
+        </div>
+
+        {/* Transaction Table */}
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Guest Name</th>
+                <th>Room</th>
+                <th>Room No</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Total Bill</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.map((t, index) => (
+                <tr key={t._id}>
+                  <td>{index + 1}</td>
+                  <td>{t.name}</td>
+                  <td>{t.room}</td>
+                  <td>{t.roomno || "-"}</td>
+                  <td>{t.checkin?.split("T")[0]}</td>
+                  <td>{t.checkout?.split("T")[0]}</td>
+                  <td>{t.totalBill ? `₹ ${t.totalBill}` : "-"}</td>
+                  <td>{t.status || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Chart */}
+        <div className="chart-section">
+          <h2>Bookings per Room Type</h2>
+          <Bar data={chartData} />
+        </div>
+
+        {/* Reviews */}
+        <div className="reviews-section">
+          <h2>📝 Reviews & Suggestions</h2>
+          <div className="reviews-list">
+            {reviews.map((r) => (
+              <div key={r.id} className="review-card">
+                <h4>{r.name}</h4>
+                <p>{r.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
 }

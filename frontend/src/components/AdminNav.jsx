@@ -2,6 +2,15 @@ import { Link } from "react-router-dom";
 
 function AdminNav() {
 
+
+const handleLogout = () => {
+  localStorage.removeItem("adminToken"); // remove token from localStorage
+  sessionStorage.removeItem("adminToken"); // remove token from sessionStorage
+  window.location.href = "/login"; // redirect to login page
+};
+
+
+
     return(
         <>
             <div className="AdNav">
@@ -15,7 +24,7 @@ function AdminNav() {
                   <Link to="/admin/bookings">Bookings</Link>
                   <Link to="/admin/rooms">Rooms</Link>
                   <Link to="/admin/reports" className="active">Reports</Link>
-                  <Link to="/login" className="btn">Logout</Link>
+                  <Link to="#" className="btn" onClick={handleLogout}>Logout</Link>
                 </nav>
             </div>
             <div className="dummyHead"></div>

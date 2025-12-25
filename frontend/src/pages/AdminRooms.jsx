@@ -1,129 +1,298 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import AdminNav from "../components/AdminNav";
 import Footer from "../components/Footer";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminRooms() {
-	const [rooms, setRooms] = useState([
-		{
-			id: 1,
-			title: "Non-AC Standard Room",
-			category: "Non-AC",
-			price: 800,
-			image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c",
-			description: "Cozy room with all basic amenities.",
-			totalRooms: 15,
-			bookedRooms: 0,
-		},
-		{
-			id: 2,
-			title: "AC Deluxe Room",
-			category: "AC",
-			price: 1200,
-			image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461",
-			description: "Spacious AC room with sea view.",
-			totalRooms: 15,
-			bookedRooms: 0,
-		},
-	]);
 
+const navigate = useNavigate();
+
+	useEffect(() => {
+	const token =
+	  localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+	if (!token) {
+	  navigate("/login"); // redirect if token is missing
+	}
+  }, [navigate]);
+
+	const [rooms, setRooms] = useState([]);
 	const [formData, setFormData] = useState({
 		id: null,
 		title: "",
 		category: "",
 		price: "",
-		image: "",
+		image: null,
 		description: "",
 		totalRooms: 1,
 		bookedRooms: 0,
 	});
-
 	const [isEditing, setIsEditing] = useState(false);
+	const [fileError, setFileError] = useState("");
 
-	const handleInputChange = (e) => {
-		setFormData({ ...formData, [e.target.name]: e.target.value });
+	const today = new Date().toISOString().split("T")[0];
+
+	const [selectedDate, setSelectedDate] = useState(
+		new Date().toISOString().split("T")[0]
+	);
+	
+	const [dayBookings, setDayBookings] = useState([]);
+
+
+
+
+	const token = localStorage.getItem("adminToken");
+
+	useEffect(() => {
+		fetchRooms();
+	}, []);
+
+	const fetchRooms = async () => {
+		try {
+			const res = await axios.get("http://localhost:5000/api/rooms", {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			setRooms(res.data);
+		} catch (err) {
+			console.error("Fetch rooms error:", err);
+		}
 	};
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
+	const handleInputChange = (e) => {
+		const { name, value } = e.target;
+		setFormData({ ...formData, [name]: value });
+	};
 
-		if (isEditing) {
-			setRooms(rooms.map(r => (r.id === formData.id ? formData : r)));
-			setIsEditing(false);
-		} else {
-			setRooms([...rooms, { ...formData, id: Date.now() }]);
+	const handleFileChange = (e) => {
+		const file = e.target.files[0];
+		if (file) {
+			if (file.size > 5 * 1024 * 1024) {
+				setFileError("File size cannot exceed 5 MB");
+				setFormData({ ...formData, image: null });
+			} else {
+				setFileError("");
+				setFormData({ ...formData, image: file });
+			}
 		}
+	};
 
-		setFormData({
-			id: null,
-			title: "",
-			category: "",
-			price: "",
-			image: "",
-			description: "",
-			totalRooms: 1,
-			bookedRooms: 0,
-		});
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		try {
+			const data = new FormData();
+			data.append("title", formData.title);
+			data.append("category", formData.category);
+			data.append("price", formData.price);
+			data.append("description", formData.description);
+			data.append("totalRooms", formData.totalRooms);
+			data.append("bookedRooms", formData.bookedRooms);
+			if (formData.image) data.append("image", formData.image);
+
+			const config = {
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			};
+
+			if (isEditing) {
+				await axios.put(
+					`http://localhost:5000/api/rooms/${formData.id}`,
+					data,
+					config
+				);
+			} else {
+				await axios.post("http://localhost:5000/api/rooms", data, config);
+			}
+
+			setFormData({
+				id: null,
+				title: "",
+				category: "",
+				price: "",
+				image: null,
+				description: "",
+				totalRooms: 1,
+				bookedRooms: 0,
+			});
+			setIsEditing(false);
+			fetchRooms();
+		} catch (err) {
+			console.error("Save room error:", err);
+			alert("Error saving room");
+		}
 	};
 
 	const handleEdit = (room) => {
-		setFormData(room);
+		setFormData({
+			id: room._id,
+			title: room.title,
+			category: room.category,
+			price: room.price,
+			image: null,
+			description: room.description,
+			totalRooms: room.totalRooms,
+			bookedRooms: room.bookedRooms,
+		});
 		setIsEditing(true);
+		setFileError("");
 	};
 
-	const handleDelete = (id) => {
+	const handleDelete = async (id) => {
 		if (window.confirm("Are you sure you want to delete this room?")) {
-			setRooms(rooms.filter(r => r.id !== id));
+			try {
+				await axios.delete(`http://localhost:5000/api/rooms/${id}`, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				fetchRooms();
+			} catch (err) {
+				console.error("Delete room error:", err);
+				alert("Error deleting room");
+			}
 		}
 	};
 
-	const updateTotalRooms = (id, type) => {
-		setRooms(prev =>
-			prev.map(room => {
-				if (room.id !== id) return room;
+	const updateTotalRooms = async (id, type) => {
+		const room = rooms.find((r) => r._id === id);
+		if (!room) return;
 
-				let newTotal =
-					type === "inc"
-						? room.totalRooms + 1
-						: room.totalRooms - 1;
+		let newTotal =
+			type === "inc" ? room.totalRooms + 1 : room.totalRooms - 1;
 
-				// minimum = max(bookedRooms, 1)
-				const minRooms = Math.max(room.bookedRooms, 1);
+		// Minimum = booked rooms OR 1
+		const minRooms = Math.max(room.bookedRooms || 0, 1);
 
-				// clamp between min and 20
-				newTotal = Math.min(20, Math.max(minRooms, newTotal));
+		// Clamp value between minRooms and 20
+		newTotal = Math.min(20, Math.max(minRooms, newTotal));
 
-				return { ...room, totalRooms: newTotal };
-			})
-		);
+		// 🚫 Avoid unnecessary API call
+		if (newTotal === room.totalRooms) return;
+
+		try {
+			const token = localStorage.getItem("Token");
+			if (!token) {
+				alert("Unauthorized: Please login again");
+				return;
+			}
+
+			await axios.put(
+				`http://localhost:5000/api/rooms/${id}`,
+				{ totalRooms: newTotal }, // 🔥 update only what is needed
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+
+			fetchRooms();
+		} catch (err) {
+			console.error("Update total rooms error:", err);
+			alert(
+				err.response?.data?.message ||
+				"Failed to update room count"
+			);
+		}
 	};
+
+
+	// new codes !
+	useEffect(() => {
+	fetchAvailability();
+}, [selectedDate]);
+
+const fetchAvailability = async () => {
+	try {
+		const res = await axios.get(
+			`http://localhost:5000/api/bookings/availability/${selectedDate}`,
+			{ headers: { Authorization: `Bearer ${token}` } }
+		);
+		setDayBookings(res.data);
+	} catch (err) {
+		console.error("Availability fetch error:", err);
+	}
+};
+
+
+
+const getBookedCountForRoom = (roomTitle) => {
+	const booking = dayBookings.find(b => b.room === roomTitle);
+	return booking ? booking.count : 0;
+};
+
+
+const changeDateBy = (days) => {
+	const date = new Date(selectedDate);
+	date.setDate(date.getDate() + days);
+
+	const newDate = date.toISOString().split("T")[0];
+	setSelectedDate(newDate);
+};
+
+
 
 
 	return (
 		<>
-			<AdminNav/>
+			<AdminNav />
 			<div className="admin-rooms">
-				
 				<h1>🛏 Manage Rooms & Categories</h1>
 
 				<div className="room-form">
 					<h2>{isEditing ? "✏ Edit Room" : "➕ Add New Room"}</h2>
 					<form onSubmit={handleSubmit}>
-						<input type="text" name="title" placeholder="Room Title" value={formData.title} onChange={handleInputChange} required />
-
-						<select name="category" value={formData.category} onChange={handleInputChange} required>
+						<input
+							type="text"
+							name="title"
+							placeholder="Room Title"
+							value={formData.title}
+							onChange={handleInputChange}
+							required
+						/>
+						<select
+							name="category"
+							value={formData.category}
+							onChange={handleInputChange}
+							required
+						>
 							<option value="">Select Category</option>
 							<option value="AC">AC</option>
 							<option value="Non-AC">Non-AC</option>
 							<option value="Family Suite">Family Suite</option>
 						</select>
-
-						<input type="number" name="price" placeholder="Price per Night (₹)" value={formData.price} onChange={handleInputChange} required />
-						<input type="text" name="image" placeholder="Image URL" value={formData.image} onChange={handleInputChange} required />
-						<textarea name="description" placeholder="Room Description" value={formData.description} onChange={handleInputChange} required />
-
-						<button type="submit">{isEditing ? "Update Room" : "Add Room"}</button>
+						<input
+							type="number"
+							name="price"
+							placeholder="Price per Night (₹)"
+							value={formData.price}
+							onChange={handleInputChange}
+							required
+						/>
+						<input
+							type="file"
+							name="image"
+							accept="image/*"
+							onChange={handleFileChange}
+						/>
+						{fileError && <p style={{ color: "red" }}>{fileError}</p>}
+						<textarea
+							name="description"
+							placeholder="Room Description"
+							value={formData.description}
+							onChange={handleInputChange}
+							required
+						/>
+						<button type="submit">
+							{isEditing ? "Update Room" : "Add Room"}
+						</button>
 						{isEditing && (
-							<button type="button" className="cancel-btn" onClick={() => setIsEditing(false)}>Cancel</button>
+							<button
+								type="button"
+								className="cancel-btn"
+								onClick={() => setIsEditing(false)}
+							>
+								Cancel
+							</button>
 						)}
 					</form>
 				</div>
@@ -133,13 +302,10 @@ export default function AdminRooms() {
 					<table>
 						<thead>
 							<tr>
-								<th>ID</th>
 								<th>Title</th>
 								<th>Category</th>
 								<th>Price</th>
 								<th>Total</th>
-								<th>Booked</th>
-								<th>Vacant</th>
 								<th>Adjust</th>
 								<th>Image</th>
 								<th>Description</th>
@@ -147,37 +313,91 @@ export default function AdminRooms() {
 							</tr>
 						</thead>
 						<tbody>
-							{rooms.map(r => (
-								<tr key={r.id}>
-									<td>{r.id}</td>
+							{rooms.map((r) => (
+								<tr key={r._id}>
 									<td>{r.title}</td>
 									<td>{r.category}</td>
 									<td>₹ {r.price}</td>
 									<td>{r.totalRooms}</td>
-									<td className="booked">{r.bookedRooms}</td>
-									<td className="vacant">{r.totalRooms - r.bookedRooms}</td>
 									<td>
 										<div className="room-count-controls">
-											<button onClick={() => updateTotalRooms(r.id, "inc")}>+</button>
-											<button onClick={() => updateTotalRooms(r.id, "dec")}>−</button>
+											<button onClick={() => updateTotalRooms(r._id, "inc")}>+</button>
+											<button onClick={() => updateTotalRooms(r._id, "dec")}>−</button>
 										</div>
 									</td>
-									<td><img src={r.image} alt={r.title} className="thumb" /></td>
+									<td>
+										<img src={`http://localhost:5000${r.image}`} alt={r.title} className="thumb" />
+									</td>
 									<td>{r.description}</td>
 									<td>
 										<button onClick={() => handleEdit(r)} className="edit-btn">Edit</button>
-										<button onClick={() => handleDelete(r.id)} className="delete-btn">Delete</button>
+										<button onClick={() => handleDelete(r._id)} className="delete-btn">Delete</button>
 									</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
 				</div>
+
+
+<div className="availability-section">
+	<h2>📅 Room Availability</h2>
+
+	<div className="date-picker">
+		<label>Select Date: </label>
+		<button onClick={() => changeDateBy(-1)} disabled={selectedDate <= today} >−</button>
+
+		<input
+			type="date"
+			value={selectedDate}
+			min={today}
+			onChange={(e) => setSelectedDate(e.target.value)}
+		/>
+
+		<button onClick={() => changeDateBy(1)}>+</button>
+	</div>
+
+	<table>
+		<thead>
+			<tr>
+				<th>Room</th>
+				<th>Total Rooms</th>
+				<th>Booked</th>
+				<th>Vacant</th>
+				<th>Status</th>
+			</tr>
+		</thead>
+		<tbody>
+			{rooms.map((room) => {
+				const booked = getBookedCountForRoom(room.title);
+				const vacant = room.totalRooms - booked;
+
+				return (
+					<tr key={room._id}>
+						<td>{room.title}</td>
+						<td>{room.totalRooms}</td>
+						<td className="booked">{booked}</td>
+						<td className="vacant">{vacant}</td>
+						<td>
+							{vacant > 0 ? (
+								<span className="vacant">Available</span>
+							) : (
+								<span className="booked">Full</span>
+							)}
+						</td>
+					</tr>
+				);
+			})}
+		</tbody>
+	</table>
+</div>
+
+
+
 			</div>
-			<Footer/>
+			<Footer />
 
 			<style>{`
-				/* ===== EXISTING CSS (UNCHANGED) ===== */
 				.admin-rooms {
 					padding: 30px;
 					font-family: Arial, sans-serif;
@@ -206,12 +426,32 @@ export default function AdminRooms() {
 					flex-direction: column;
 					gap: 10px;
 				}
+
+				.room-list-admin {
+					background: #f4f9ff;
+					padding: 20px;
+	border-radius: 8px;
+				}
 				.room-form input,
 				.room-form select,
 				.room-form textarea {
 					padding: 8px;
 					border: 1px solid #ccc;
 					border-radius: 4px;
+				}
+				.room-form button {
+					background: #0a4d91;
+					color: white;
+					border: none;
+					padding: 8px;
+					border-radius: 4px;
+					cursor: pointer;
+				}
+				.room-form button:hover {
+					background: #083b70;
+				}
+				.cancel-btn {
+					background: #888;
 				}
 				table {
 					width: 100%;
@@ -232,9 +472,7 @@ export default function AdminRooms() {
 					object-fit: cover;
 				}
 				.edit-btn { background: #ffc107; }
-				.delete-btn { background: #dc3545; }
-
-				/* ===== NEW CSS (ADDED ONLY) ===== */
+				.delete-btn { background: #dc3545; color:white; }
 				.room-count-controls {
 					display: flex;
 					justify-content: center;
@@ -251,14 +489,26 @@ export default function AdminRooms() {
 				.room-count-controls button:hover {
 					background: #083b70;
 				}
-				.booked {
-					color: red;
-					font-weight: bold;
-				}
-				.vacant {
-					color: green;
-					font-weight: bold;
-				}
+				.booked { color: red; font-weight: bold; }
+				.vacant { color: green; font-weight: bold; }
+
+				.availability-section {
+	margin-top: 40px;
+	background: #f4f9ff;
+	padding: 20px;
+	border-radius: 8px;
+}
+
+.date-picker {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	margin-bottom: 15px;
+	font-weight: bold;
+}
+
+
+
 			`}</style>
 		</>
 	);
