@@ -50,21 +50,7 @@ router.post("/", async (req, res) => {
 	}
 });
 
-/* ================= CREATE MULTIPLE GUESTS (RECOMMENDED) ================= */
-/*
-Expected body:
-{
-  "bookerName": "Prathamesh",
-  "bookerContact": "9876543210",
-  "roomNo": 203,
-  "checkin": "2025-10-15",
-  "checkout": "2025-10-18",
-  "members": [
-    { "name": "A", "age": 25, "gender": "Male", "contact": "99999" },
-    { "name": "B", "age": 22, "gender": "Female" }
-  ]
-}
-*/
+
 router.post("/bulk", async (req, res) => {
 	try {
 		const { bookerName, bookerContact, roomNo, checkin, checkout, members } = req.body;

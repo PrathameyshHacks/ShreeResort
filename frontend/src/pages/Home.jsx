@@ -140,6 +140,7 @@ export default function LandingPage() {
 						<p>✔ 10% discount on 3+ days stay</p>
 						<p>✔ Free early check-in (subject to availability)</p>
 						<p>✔ Festival season special offers</p>
+						<p>✔ Pay at the time of check-in</p>
 
 						<button className="close-btn" onClick={() => setShowPricePopup(false)}>
 							Close

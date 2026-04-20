@@ -1,16 +1,16 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const cors = require("cors");
-const connectDB = require("./config/db");
-const roomRoutes = require("./routes/rooms");
-const guestRoutes = require("./routes/guests"); // Add the guest routes
-const path = require("path");
+	const express = require("express");
+	const dotenv = require("dotenv");
+	const cors = require("cors");
+	const connectDB = require("./config/db");
 
-dotenv.config();
-connectDB();
+	const adminRoutes = require("./routes/admin");
+	const roomRoutes = require("./routes/rooms");
+	const guestRoutes = require("./routes/guests");
 
-const app = express();
+	dotenv.config();
+	connectDB();
 
+<<<<<<< HEAD
 const allowedOrigins = [
 	"http://localhost:3000",
 	"https://shreeresort.onrender.com"
@@ -32,19 +32,36 @@ app.use(cors({
 }));
 
 app.use(express.json());
+=======
+	const app = express();
+	const PORT = process.env.PORT || 5000;
+>>>>>>> 4d47bb6 (final upload)
 
-// Admin and Room routes
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/rooms", roomRoutes);
+	/* ================= MIDDLEWARE ================= */
 
-// Serve uploaded images
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+	app.use(cors({
+		origin: [
+			"http://localhost:3000",
+			process.env.FRONTEND_URL // for deployed frontend
+		],
+		credentials: true
+	}));
 
-// Booking Routes
-app.use("/api/bookings", require("./routes/bookings"));
+	app.use(express.json());
 
-// Guest Routes
-app.use("/api/guests", guestRoutes); // Register guest routes here
+	/* ================= ROUTES ================= */
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
+	app.use("/api/admin", adminRoutes);
+	app.use("/api/rooms", roomRoutes);
+	app.use("/api/bookings", require("./routes/bookings"));
+	app.use("/api/guests", guestRoutes);
+
+	/* ================= HEALTH CHECK ================= */
+	app.get("/", (req, res) => {
+		res.send("API is running...");
+	});
+
+	/* ================= START SERVER ================= */
+	app.listen(PORT, () => {
+		console.log(`🚀 Server running on port ${PORT}`);
+	});

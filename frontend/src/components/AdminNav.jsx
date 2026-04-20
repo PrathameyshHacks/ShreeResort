@@ -5,6 +5,7 @@ function AdminNav() {
 
 const handleLogout = () => {
   localStorage.removeItem("adminToken"); // remove token from localStorage
+  localStorage.removeItem("Token");
   sessionStorage.removeItem("adminToken"); // remove token from sessionStorage
   window.location.href = "/login"; // redirect to login page
 };
@@ -23,8 +24,9 @@ const handleLogout = () => {
                   <Link to="/admin">Dashboard</Link>
                   <Link to="/admin/bookings">Bookings</Link>
                   <Link to="/admin/rooms">Rooms</Link>
-                  <Link to="/admin/reports" className="active">Reports</Link>
-                  <Link to="#" className="btn" onClick={handleLogout}>Logout</Link>
+                  <Link to="/admin/reports">Reports</Link>
+                  <Link to="/admin/profile">Profile</Link>
+                  <Link to="/login" className="btn" onClick={handleLogout}>Logout</Link>
                 </nav>
             </div>
             <div className="dummyHead"></div>

@@ -6,7 +6,6 @@ import "./Booking.css";
 
 export default function BookingPage() {
 
-
 	const API = process.env.REACT_APP_API_URL;
 
 
@@ -17,6 +16,11 @@ export default function BookingPage() {
 	const [selectedRoom, setSelectedRoom] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [showImageModal, setShowImageModal] = useState(false);
+
+	const [currentImageIndex, setCurrentImageIndex] = useState(0);
+	const [zoomImage, setZoomImage] = useState(null);
+
+	const [availabilityMap, setAvailabilityMap] = useState({});
 
 	const [formData, setFormData] = useState({
 		name: "",
@@ -32,23 +36,85 @@ export default function BookingPage() {
 	});
 
 	/* ================= FETCH ROOMS ================= */
+
 	useEffect(() => {
 		const fetchRooms = async () => {
 			try {
 				const res = await axios.get(`${API}/api/rooms`);
-				const updated = res.data.map(r => ({
-					...r,
-					image: `${API}${r.image}`
-				}));
-				setRooms(updated);
+				setRooms(res.data);
 			} catch (err) {
-				console.error(err);
+				console.error("ROOM FETCH ERROR:", err);
 			} finally {
-				setLoading(false);
+				setLoading(false); // ✅ ALWAYS runs
 			}
 		};
+	
 		fetchRooms();
 	}, []);
+
+
+	useEffect(() => {
+		const fetchAvailability = async () => {
+			try {
+				let temp = {};
+
+				for (let i = 0; i < 7; i++) {
+					const date = new Date();
+					date.setDate(date.getDate() + i);
+					const formatted = date.toISOString().split("T")[0];
+
+					const res = await axios.get(`${API}/api/bookings/availability/${formatted}`);
+
+					res.data.forEach(r => {
+						if (!temp[r.room]) temp[r.room] = [];
+						temp[r.room].push({ date: formatted, count: r.count });
+					});
+				}
+
+				setAvailabilityMap(temp);
+			} catch (err) {
+				console.error("Availability error:", err);
+			}
+		};
+
+		fetchAvailability();
+	}, []);
+
+
+	const getAvailabilityStatus = (room) => {
+		const data = availabilityMap[room.title] || [];
+
+		let fullyBookedDays = 0;
+		let todayAvailable = room.totalRooms;
+
+		data.forEach((d, index) => {
+			const booked = d.count;
+			const vacant = room.totalRooms - booked;
+
+			if (index === 0) {
+				todayAvailable = vacant;
+			}
+
+			if (vacant <= 0) {
+				fullyBookedDays++;
+			}
+		});
+
+		if (todayAvailable > 0) {
+			return { type: "available", count: todayAvailable };
+		}
+
+		if (fullyBookedDays >= 5) {
+			return { type: "week" };
+		}
+
+		if (fullyBookedDays >= 2) {
+			return { type: "days", count: fullyBookedDays };
+		}
+
+		return { type: "full" };
+	};
+
 
 	/* ================= HELPERS ================= */
 	const getMaxCheckoutDate = () => {
@@ -113,77 +179,93 @@ export default function BookingPage() {
 		const file = e.target.files[0];
 		if (!file) return;
 
+		// ✅ File type validation
+		const allowedTypes = [
+			"application/pdf",
+			"image/jpeg",
+			"image/png",
+			"image/jpg"
+		];
+
+		if (!allowedTypes.includes(file.type)) {
+			alert("Only PDF and image files are allowed");
+			e.target.value = null;
+			return;
+		}
+
+		// ✅ Size validation (1MB)
 		if (file.size > 1024 * 1024) {
 			alert("File must be under 1MB");
 			e.target.value = null;
 			return;
 		}
+
 		setFormData({ ...formData, idfile: file });
 	};
 
 	/* ================= SUBMIT ================= */
-const handleSubmit = async (e) => {
-	e.preventDefault();
-
-	if (formData.checkin < today) {
-		alert("Check-in date cannot be past");
-		return;
-	}
-
-	if (new Date(formData.checkout) <= new Date(formData.checkin)) {
-		alert("Check-out must be after check-in");
-		return;
-	}
-
-	if (!formData.idfile) {
-		alert("Upload ID proof");
-		return;
-	}
-
-	try {
-		const data = new FormData();
-
-		data.append("name", formData.name);
-		data.append("contact", formData.contact);
-		data.append("room", selectedRoom.title);
-		data.append("checkin", formData.checkin);
-		data.append("checkout", formData.checkout);
-		data.append("adult", formData.numAdults);
-		data.append("child", formData.numChildren);
-		data.append("docFile", formData.idfile);
-
-		// Send members as JSON string
-		data.append("members", JSON.stringify(formData.members));
-
-		await axios.post(
-			`${API}/api/bookings`,
-			data,
-			{ headers: { "Content-Type": "multipart/form-data" } }
-		);
-
-		alert(`✅ Booking Confirmed for ${selectedRoom.title}`);
-
-		// Reset form
-		setFormData({
-			name: "",
-			contact: "",
-			gender: "",
-			age: "",
-			checkin: "",
-			checkout: "",
-			numAdults: 1,
-			numChildren: 0,
-			idfile: null,
-			members: []
-		});
-
-		setIsModalOpen(false);
-
-	} catch (err) {
-		console.error(err);
-		alert(err.response?.data?.message || "❌ Booking failed");
-	}
-};
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+	
+		if (!selectedRoom) {
+			alert("Please select a room");
+			return;
+		}
+	
+		if (formData.checkin < today) {
+			alert("Check-in date cannot be past");
+			return;
+		}
+	
+		if (new Date(formData.checkout) <= new Date(formData.checkin)) {
+			alert("Check-out must be after check-in");
+			return;
+		}
+	
+		if (!formData.idfile) {
+			alert("Upload ID proof");
+			return;
+		}
+	
+		try {
+			const data = new FormData();
+		
+			data.append("name", formData.name);
+			data.append("contact", formData.contact);
+			data.append("room", selectedRoom.title);
+			data.append("checkin", formData.checkin);
+			data.append("checkout", formData.checkout);
+			data.append("adult", formData.numAdults);
+			data.append("child", formData.numChildren);
+			data.append("docFile", formData.idfile);
+			data.append("members", JSON.stringify(formData.members));
+		
+			await axios.post(`${API}/api/bookings`, data, {
+				headers: { "Content-Type": "multipart/form-data" }
+			});
+		
+			alert(`✅ Booking Confirmed for ${selectedRoom.title}`);
+		
+			setFormData({
+				name: "",
+				contact: "",
+				gender: "",
+				age: "",
+				checkin: "",
+				checkout: "",
+				numAdults: 1,
+				numChildren: 0,
+				idfile: null,
+				members: []
+			});
+		
+			setIsModalOpen(false);
+		
+		} catch (err) {
+			console.error(err);
+			alert(err.response?.data?.message || "❌ Booking failed");
+		}
+	};
 
 
 	return (
@@ -194,29 +276,49 @@ const handleSubmit = async (e) => {
 				<h1>🛏️ Book Your Stay</h1>
 
 				{loading ? <p>Loading rooms...</p> : (
-					<div className="room-list">
-						{rooms.map(room => (
+				<div className="room-list">
+					{rooms.map(room => {
+						const status = getAvailabilityStatus(room);
+					
+						return (
 							<div key={room._id} className="room-card">
+
 								<img
-									src={room.image}
+									src={room.images?.[0]}
 									alt={room.title}
 									onClick={() => {
 										setSelectedRoom(room);
+										setCurrentImageIndex(0);
 										setShowImageModal(true);
 									}}
 								/>
+
 								<h3>{room.title}</h3>
 								<p>{room.description}</p>
 								<p className="price">₹ {room.price} / night</p>
-								<button onClick={() => {
-									setSelectedRoom(room);
-									setIsModalOpen(true);
-								}}>
-									Book Now
+								
+								{/* 🔥 AVAILABILITY STATUS */}
+								<p className={`availability ${status.type}`}>
+									{status.type === "available" && `✅ ${status.count} rooms available`}
+									{status.type === "days" && `❌ Fully booked for next ${status.count} days`}
+									{status.type === "week" && `❌ No rooms available this week`}
+									{status.type === "full" && `❌ Fully booked today`}
+								</p>
+								
+								<button
+									disabled={status.type !== "available"}
+									onClick={() => {
+										setSelectedRoom(room);
+										setIsModalOpen(true);
+									}}
+								>
+									{status.type === "available" ? "Book Now" : "Not Available"}
 								</button>
+								
 							</div>
-						))}
-					</div>
+						);
+					})}
+				</div>
 				)}
 			</div>
 
@@ -225,11 +327,64 @@ const handleSubmit = async (e) => {
 				<div className="image-modal-overlay" onClick={() => setShowImageModal(false)}>
 					<div className="image-modal" onClick={e => e.stopPropagation()}>
 						<h2>{selectedRoom.title}</h2>
-						<img src={selectedRoom.image} alt="Preview" />
+			
+						<div className="slider-container">
+
+							{/* PREV BUTTON */}
+							<button
+								className="nav-btn prev"
+								onClick={() =>
+									setCurrentImageIndex(prev =>
+										prev === 0 ? selectedRoom.images.length - 1 : prev - 1
+									)
+								}
+							>
+								❮
+							</button>
+							
+							{/* MAIN IMAGE */}
+							<img
+								src={selectedRoom.images[currentImageIndex]}
+								alt="room"
+								className="main-image"
+								onClick={() => setZoomImage(selectedRoom.images[currentImageIndex])}
+							/>
+
+							{/* NEXT BUTTON */}
+							<button
+								className="nav-btn next"
+								onClick={() =>
+									setCurrentImageIndex(prev =>
+										prev === selectedRoom.images.length - 1 ? 0 : prev + 1
+									)
+								}
+							>
+								❯
+							</button>
+						</div>
+							
+						{/* THUMBNAILS */}
+						<div className="thumbnail-row">
+							{selectedRoom.images.map((img, i) => (
+								<img
+									key={i}
+									src={img}
+									className={`thumb ${i === currentImageIndex ? "active" : ""}`}
+									onClick={() => setCurrentImageIndex(i)}
+								/>
+							))}
+						</div>
+						
 						<button className="close-btn" onClick={() => setShowImageModal(false)}>
 							Close
 						</button>
 					</div>
+				</div>
+			)}
+
+			{zoomImage && (
+				<div className="zoom-overlay" onClick={() => setZoomImage(null)}>
+					<img src={zoomImage} alt="zoomed" className="zoom-image" />
 				</div>
 			)}
 

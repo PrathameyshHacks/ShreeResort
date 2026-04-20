@@ -41,7 +41,7 @@ export default function AdminSign() {
     }
 
     setFormData({ ...formData, [name]: value });
-  };
+  }
 
   // Submit form
   const handleSubmit = async (e) => {

@@ -9,8 +9,7 @@ export default function AdminRooms() {
 const navigate = useNavigate();
 
 	useEffect(() => {
-	const token =
-	  localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+	const token = localStorage.getItem("adminToken");
 	if (!token) {
 	  navigate("/login"); // redirect if token is missing
 	}
@@ -25,8 +24,9 @@ const navigate = useNavigate();
 		title: "",
 		category: "",
 		price: "",
-		image: null,
+		images: [], // 🔥 array now
 		description: "",
+		startRoomNo: "",
 		totalRooms: 1,
 		bookedRooms: 0,
 	});
@@ -67,29 +67,47 @@ const navigate = useNavigate();
 	};
 
 	const handleFileChange = (e) => {
-		const file = e.target.files[0];
-		if (file) {
+		const files = Array.from(e.target.files);
+
+		if (files.length > 5) {
+			setFileError("Max 5 images allowed");
+			return;
+		}
+
+		for (let file of files) {
 			if (file.size > 5 * 1024 * 1024) {
-				setFileError("File size cannot exceed 5 MB");
-				setFormData({ ...formData, image: null });
-			} else {
-				setFileError("");
-				setFormData({ ...formData, image: file });
+				setFileError("Each file must be under 5MB");
+				return;
 			}
 		}
+
+		setFileError("");
+		setFormData({ ...formData, images: files });
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+
+		if (formData.images.length === 0 && !isEditing) {
+			alert("Please upload at least 1 image");
+			return;
+		}
+
 		try {
 			const data = new FormData();
+
 			data.append("title", formData.title);
 			data.append("category", formData.category);
 			data.append("price", formData.price);
 			data.append("description", formData.description);
+			data.append("startRoomNo", formData.startRoomNo);
 			data.append("totalRooms", formData.totalRooms);
 			data.append("bookedRooms", formData.bookedRooms);
-			if (formData.image) data.append("image", formData.image);
+
+			// 🔥 append multiple images
+			formData.images.forEach((img) => {
+				data.append("images", img);
+			});
 
 			const config = {
 				headers: {
@@ -99,11 +117,7 @@ const navigate = useNavigate();
 			};
 
 			if (isEditing) {
-				await axios.put(
-					`${API}/api/rooms/${formData.id}`,
-					data,
-					config
-				);
+				await axios.put(`${API}/api/rooms/${formData.id}`, data, config);
 			} else {
 				await axios.post(`${API}/api/rooms`, data, config);
 			}
@@ -113,33 +127,37 @@ const navigate = useNavigate();
 				title: "",
 				category: "",
 				price: "",
-				image: null,
+				images: [],
 				description: "",
+				startRoomNo: "",
 				totalRooms: 1,
 				bookedRooms: 0,
 			});
+
 			setIsEditing(false);
 			fetchRooms();
+
 		} catch (err) {
-			console.error("Save room error:", err);
-			alert("Error saving room");
+			console.error(err);
+			alert(err.response?.data?.message || "Error saving room");
 		}
 	};
 
-	const handleEdit = (room) => {
-		setFormData({
-			id: room._id,
-			title: room.title,
-			category: room.category,
-			price: room.price,
-			image: null,
-			description: room.description,
-			totalRooms: room.totalRooms,
-			bookedRooms: room.bookedRooms,
-		});
-		setIsEditing(true);
-		setFileError("");
-	};
+const handleEdit = (room) => {
+	setFormData({
+		id: room._id || null,
+		title: room.title || "",
+		category: room.category || "",
+		price: room.price || "",
+		images: [], // important fix
+		description: room.description || "",
+		totalRooms: room.totalRooms || 1,
+		bookedRooms: room.bookedRooms || 0,
+		startRoomNo: room.roomNumbers?.[0] || "", // 🔥 important
+	});
+	setIsEditing(true);
+	setFileError("");
+};
 
 	const handleDelete = async (id) => {
 		if (window.confirm("Are you sure you want to delete this room?")) {
@@ -202,7 +220,7 @@ const navigate = useNavigate();
 	// new codes !
 	useEffect(() => {
 	fetchAvailability();
-}, [selectedDate]);
+	}, [selectedDate]);
 
 const fetchAvailability = async () => {
 	try {
@@ -231,9 +249,6 @@ const changeDateBy = (days) => {
 	const newDate = date.toISOString().split("T")[0];
 	setSelectedDate(newDate);
 };
-
-
-
 
 	return (
 		<>
@@ -265,6 +280,14 @@ const changeDateBy = (days) => {
 						</select>
 						<input
 							type="number"
+							name="startRoomNo"
+							placeholder="Start Room Number"
+							value={formData.startRoomNo}
+							onChange={handleInputChange}
+							required
+						/>
+						<input
+							type="number"
 							name="price"
 							placeholder="Price per Night (₹)"
 							value={formData.price}
@@ -273,7 +296,7 @@ const changeDateBy = (days) => {
 						/>
 						<input
 							type="file"
-							name="image"
+							multiple
 							accept="image/*"
 							onChange={handleFileChange}
 						/>
@@ -329,7 +352,9 @@ const changeDateBy = (days) => {
 										</div>
 									</td>
 									<td>
-										<img src={`http://localhost:5000${r.image}`} alt={r.title} className="thumb" />
+										{r.images.map((img, i) => (
+											<img key={i} src={img} alt="room" className="thumb" />
+										))}
 									</td>
 									<td>{r.description}</td>
 									<td>
@@ -397,7 +422,7 @@ const changeDateBy = (days) => {
 
 
 
-			</div>
+</div>
 			<Footer />
 
 			<style>{`
@@ -433,7 +458,7 @@ const changeDateBy = (days) => {
 				.room-list-admin {
 					background: #f4f9ff;
 					padding: 20px;
-	border-radius: 8px;
+					border-radius: 8px;
 				}
 				.room-form input,
 				.room-form select,

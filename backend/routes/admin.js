@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Admin = require("../models/Admin");
 const jwt = require("jsonwebtoken");
+const { protect } = require("../middleware/auth");
 
 // PASSWORD VALIDATION (BACKEND)
 const isStrongPassword = (password) => {
@@ -20,11 +21,7 @@ router.post("/register", async (req, res) => {
     const { name, email, contact, password } = req.body;
 
     // Password strength validation
-    const isStrong = password.length >= 8 &&
-                     /[A-Z]/.test(password) &&
-                     /[a-z]/.test(password) &&
-                     /[0-9]/.test(password) &&
-                     /[^A-Za-z0-9]/.test(password);
+    const isStrong = isStrongPassword(password);
 
     if (!isStrong) {
       return res.status(400).json({ message: "Weak password" });
@@ -66,6 +63,47 @@ router.post("/login", async (req, res) => {
     res.status(200).json({ message: "Login successful", token });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET Admin Profile
+router.get("/profile", protect, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin.id).select("-password");
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    res.json(admin);
+  } catch (error) {
+    console.error("PROFILE GET ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// UPDATE Admin Profile
+router.put("/profile", protect, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin.id);
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    const { name, email, password } = req.body;
+
+    admin.name = name || admin.name;
+    admin.email = email || admin.email;
+
+    if (password) {
+      const isStrong = isStrongPassword(password);
+      if (!isStrong) {
+        return res.status(400).json({ message: "Weak password. Password must contain at least 8 characters, an uppercase and lowercase letter, a number, and a special character." });
+      }
+      admin.password = password;
+    }
+
+    await admin.save();
+    
+    res.json({ message: "Profile updated successfully", name: admin.name, email: admin.email });
+  } catch (error) {
+    console.error("PROFILE UPDATE ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

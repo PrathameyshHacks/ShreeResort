@@ -8,7 +8,7 @@ const bookingSchema = new mongoose.Schema({
   room: { type: String, required: true },
   roomno: { type: Number },  // can be manually entered
   noOfPersons: { type: Number, default: 1 },
-  adult: {type: Number, default: 1},
+  adult: {type: Number, default: 0},
   child: {type: Number, default: 0},
   checkin: { type: Date, required: true },
   checkout: { type: Date, required: true },

@@ -7,7 +7,7 @@ const guestSchema = new mongoose.Schema({
   memberContact: { type: String },
   memberAge: { type: Number},
   memberGender: { type: String, required: true },
-  roomNo: { type: String, required: true },
+  roomNo: { type: Number, required: true },
   checkin: { type: Date, required: true },
   checkout: { type: Date, required: true },
 }, { timestamps: true });
