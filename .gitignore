@@ -8,3 +8,8 @@ frontend/node_modules/
 
 # Env files
 .env
+
+
+node_modules/
+.env
+backend/uploads/
