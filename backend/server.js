@@ -10,7 +10,7 @@
 	dotenv.config();
 	connectDB();
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 const allowedOrigins = [
 	"http://localhost:3000",
 	"https://shreeresort.onrender.com"
@@ -32,10 +32,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
-=======
+//=======
 	const app = express();
 	const PORT = process.env.PORT || 5000;
->>>>>>> 4d47bb6 (final upload)
+//>>>>>>> 4d47bb6 (final upload)
 
 	/* ================= MIDDLEWARE ================= */
 
