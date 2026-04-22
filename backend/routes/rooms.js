@@ -1,3 +1,4 @@
+//rooms.js
 const express = require("express");
 const router = express.Router();
 const Room = require("../models/Room");
@@ -99,9 +100,10 @@ router.put("/:id", protect, upload.array("images", 5), async (req, res) => {
 		Object.assign(room, req.body);
 
 		// 🔥 Regenerate room numbers if changed
-		if (totalRooms && startRoomNo) {
+		if (totalRooms !== undefined) {
+			const start = startRoomNo !== undefined ? startRoomNo : (room.roomNumbers && room.roomNumbers[0] !== undefined ? room.roomNumbers[0] : 101);
 			room.roomNumbers = generateRoomNumbers(
-				parseInt(startRoomNo),
+				parseInt(start),
 				parseInt(totalRooms)
 			);
 		}
