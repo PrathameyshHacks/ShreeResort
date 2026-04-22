@@ -3,21 +3,44 @@ const mongoose = require("mongoose");
 const bookingSchema = new mongoose.Schema({
   name: { type: String, required: true },
   contact: { type: String, required: true },
-  age: { type: String },
+
+  age: { type: Number },
   gender: { type: String },
+
   room: { type: String, required: true },
-  roomno: { type: Number },  // can be manually entered
-  noOfPersons: { type: Number, default: 1 },
-  adult: {type: Number, default: 0},
-  child: {type: Number, default: 0},
+  roomno: { type: Number, required: true },
+
+  // Optional adult/child
+  adult: { type: Number, default: 0 },   // <= default 0
+  child: { type: Number, default: 0 },   // <= default 0
+
+  noOfPersons: { type: Number }, // optional (can calculate)
+
   checkin: { type: Date, required: true },
   checkout: { type: Date, required: true },
-  status: { type: String, enum: ["Pending", "Checked In", "Checked Out"], default: "Pending" },
+
+  status: {
+    type: String,
+    enum: ["Pending", "Checked In", "Checked Out"],
+    default: "Pending"
+  },
+
   checkInTime: { type: String },
   checkOutTime: { type: String },
+
   totalBill: { type: Number },
-  docFile: { type: String },  // store filename/path
-  docType: { type: String },
+
+  docFile: { type: String },
+  docType: { type: String }
+
 }, { timestamps: true });
+
+
+// 🔥 Auto-calculate total persons before saving
+bookingSchema.pre("save", function () {
+  this.noOfPersons = (this.adult || 0) + (this.child || 0);
+});
+
+bookingSchema.index({ room: 1, checkin: 1, checkout: 1 });
 
 module.exports = mongoose.model("Booking", bookingSchema);
