@@ -537,57 +537,65 @@ export default function AdminBookings() {
 							onChange={(e) => setForm({ ...form, checkout: e.target.value })}
 							required
 						/>
+						<div style={{ display: "flex", gap: "10px" }}>
+							<input
+								type="number"
+								placeholder="Room No (Manual or Auto)"
+								value={form.roomno}
+								onChange={(e) => setForm({ ...form, roomno: e.target.value })}
+							/>
 
-						{activities.length > 0 && (
-							<div style={{ background: "#f8f8f8", padding: "10px", borderRadius: "5px", border: "1px solid #ddd", textAlign: "left" }}>
-								<label style={{ fontWeight: "bold", display: "block", marginBottom: "5px" }}>Add Activities:</label>
-								<div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-									{activities.map(act => {
-										const actId = act._id || act.activityId;
-										const isSelected = !!selectedActivities.find(a => a._id === actId || a.activityId === actId);
-										return (
-											<div key={actId} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-												<input
-													type="checkbox"
-													checked={isSelected}
-													onChange={() => {
-														if (isSelected) {
-															setSelectedActivities(prev => prev.filter(a => a._id !== actId && a.activityId !== actId));
-														} else {
-															setSelectedActivities(prev => [...prev, act]);
-														}
-													}}
-													style={{ width: "auto" }}
-												/>
-												<span style={{ fontSize: "14px" }}>{act.name} (+₹{act.price})</span>
-											</div>
-										);
-									})}
+							{activities.length > 0 && (
+								<div style={{ background: "#f8f8f8", padding: "10px", borderRadius: "5px", border: "1px solid #ddd", textAlign: "left" }}>
+									<label style={{ fontWeight: "bold", display: "block", marginBottom: "5px" }}>Add Activities:</label>
+									<div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+										{activities.map(act => {
+											const actId = act._id || act.activityId;
+											const isSelected = !!selectedActivities.find(a => a._id === actId || a.activityId === actId);
+											return (
+												<div key={actId} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+													<input
+														type="checkbox"
+														checked={isSelected}
+														onChange={() => {
+															if (isSelected) {
+																setSelectedActivities(prev => prev.filter(a => a._id !== actId && a.activityId !== actId));
+															} else {
+																setSelectedActivities(prev => [...prev, act]);
+															}
+														}}
+														style={{ width: "auto" }}
+													/>
+													<span style={{ fontSize: "14px" }}>{act.name} (+₹{act.price})</span>
+												</div>
+											);
+										})}
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
-						<input
-							type="file"
-							accept="application/pdf,image/*"
-							onChange={(e) => {
-								const file = e.target.files[0];
-								if (!file) return;
-								if (!["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
-									alert("Only PDF and image files are allowed.");
-									e.target.value = null;
-									return;
-								}
-								if (file.size > 1024 * 1024) {
-									alert("File size must be 1 MB or less.");
-									e.target.value = null;
-									return;
-								}
-								setForm({ ...form, docFile: file });
-							}}
-							{...(editingId === null ? { required: true } : {})}
-						/>
-						<button type="submit">{editingId ? "Update" : "Add"} Booking</button>
+							<input
+								type="file"
+								accept="application/pdf,image/*"
+								onChange={(e) => {
+									const file = e.target.files[0];
+									if (!file) return;
+									if (!["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+										alert("Only PDF and image files are allowed.");
+										e.target.value = null;
+										return;
+									}
+									if (file.size > 1024 * 1024) {
+										alert("File size must be 1 MB or less.");
+										e.target.value = null;
+										return;
+									}
+									setForm({ ...form, docFile: file });
+								}}
+								{...(editingId === null ? { required: true } : {})}
+							/>
+							<button type="submit">{editingId ? "Update" : "Add"} Booking</button>
+						</div>
 					</form>
 				</div>
 

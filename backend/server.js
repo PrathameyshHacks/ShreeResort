@@ -23,6 +23,8 @@ app.use(cors({
 	credentials: true
 }));
 
+/* ================= MIDDLEWARE ================= */
+
 app.use(express.json());
 
 /* ================= ROUTES ================= */

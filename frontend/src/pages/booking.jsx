@@ -566,11 +566,11 @@ export default function BookingPage() {
 						<h2>🎉 Booking Successful!</h2>
 						<p><strong>Booking ID:</strong> {bookingSuccessData._id}</p>
 						<p>Your room has been reserved successfully.</p>
-						
+
 						<div style={{ marginTop: "20px", display: "flex", gap: "15px", justifyContent: "center" }}>
-							<a 
-								href={`${API}/api/pdfs/booking/${bookingSuccessData._id}`} 
-								target="_blank" 
+							<a
+								href={`${API}/api/pdfs/booking/${bookingSuccessData._id}`}
+								target="_blank"
 								rel="noreferrer"
 							>
 								<button style={{ background: "#28a745" }}>Download Confirmation PDF</button>
