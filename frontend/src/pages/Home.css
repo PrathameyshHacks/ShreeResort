@@ -1,8 +1,8 @@
 .landing-page {
-	font-family: Arial, sans-serif;
-	color: #333;
-	background-color: antiquewhite;
+	color: var(--text-main);
+	background-color: var(--bg-main);
 }
+
 .hero {
 	height: 90vh;
 	display: flex;
@@ -11,192 +11,237 @@
 	text-align: center;
 	color: #fff;
 	position: relative;
-
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
-	transition: background-image 2s ease-in-out;
+	transition: background-image 1s ease-in-out;
 }
 
 .hero::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.4);
+	background: rgba(10, 77, 145, 0.4); /* Primary color overlay */
 }
 
 .hero-content {
 	position: relative;
 	z-index: 1;
+	max-width: 800px;
+	padding: 0 20px;
 }
 
 .hero-content h1 {
-	position: relative;
-	top: -40px;
-	font-size: 48px;
+	font-size: 56px;
+	font-weight: 800;
+	margin-bottom: 20px;
+	line-height: 1.2;
 }
 
 .hero-content p {
-	position: relative;
-	top: -15px;
-	font-size: 20px;
+	font-size: 22px;
+	margin-bottom: 40px;
+	opacity: 0.9;
 }
 
 .hero-content h1 span {
-	color: #ffd700;
+	color: var(--accent);
 }
-
-.hero-content h1:hover,.hero-content p:hover {
-
-	color: rgb(104, 238, 104);
-}
-
 
 .cta-btn {
-    position: relative;
-	background-color: #15ed27;
-	color: #340852;
-	top: 25px;
-    padding: 8px 14px;
-	font-weight: bold;
-	border-radius: 5px;
+	display: inline-block;
+	background-color: var(--secondary);
+	color: white;
+	padding: 14px 32px;
+	font-size: 18px;
+	font-weight: 700;
+	border-radius: var(--radius-md);
 	text-decoration: none;
+	transition: var(--transition);
+	box-shadow: var(--shadow-md);
 }
 
 .cta-btn:hover {
-
-    color: rgb(255, 255, 255);
+	background-color: var(--secondary-hover);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-hover);
+	color: white;
 }
 
 .features {
-	position: relative;
-	height: 450px;
-	padding-top: 50px;
+	padding: 80px 20px;
 	text-align: center;
-	background-color: #f8f8f8;
+	background-color: var(--bg-card);
 }
 
 .features h1 {
-
-	position: relative;
-	top: 40px;
-	font-size: 40px;
+	font-size: 36px;
+	color: var(--text-dark);
+	margin-bottom: 50px;
+	font-weight: 800;
 }
 
 .feature-cards {
-	position: relative;
-	top: 90px;
-	display: flex;
-	justify-content: center;
-	flex-wrap: wrap;
-	gap: 40px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 30px;
+	max-width: 1100px;
+	margin: 0 auto;
 }
 
 .card {
-	background: white;
-	padding: 25px;
-	width: 320px;
-	height: 140px;
-	box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-	border-radius: 8px;
+	background: var(--bg-main);
+	padding: 35px 25px;
+	box-shadow: var(--shadow-md);
+	border-radius: var(--radius-md);
 	cursor: pointer;
-	font-size: 17px;
-	transition: transform 0.3s ease, box-shadow 0.3s ease;
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--text-dark);
+	transition: var(--transition);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border-light);
 }
 
 .card:hover {
-
-    transform: translateY(-5px);
-	color: darkcyan;
-	box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+	transform: translateY(-5px);
+	color: var(--primary);
+	box-shadow: var(--shadow-hover);
+	border-color: var(--primary);
 }
+
 /* Price Popup */
 .price-overlay {
 	position: fixed;
-	top: 0; left: 0; right: 0; bottom: 0;
-	background: rgba(0,0,0,0.6);
+	inset: 0;
+	background: rgba(10, 77, 145, 0.4);
+	backdrop-filter: blur(4px);
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	z-index: 1000;
 }
+
 .price-modal {
-	position: relative;
-    background-color: antiquewhite;
-	align-items: center;
-	justify-content: center;
-	padding: 25px;
-	padding-top: 80px;
-	border-radius: 10px;
-	width: 500px;
-	height: 450px;
+	background: var(--bg-card);
+	padding: 40px;
+	border-radius: var(--radius-md);
+	width: 90%;
+	max-width: 500px;
+	box-shadow: var(--shadow-lg);
 	text-align: center;
 }
+
+.price-modal h2 {
+	color: var(--text-dark);
+	margin-bottom: 20px;
+}
+
 .price-modal ul {
 	list-style: none;
-	padding: 10px;
+	padding: 0;
+	margin: 20px 0;
 }
+
 .price-modal li {
-	margin: 8px 0;
+	margin: 12px 0;
+	font-size: 16px;
+	color: var(--text-main);
+	display: flex;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--border-light);
+	padding-bottom: 8px;
 }
+
+.price-modal li strong {
+	color: var(--primary);
+}
+
 .close-btn {
-	margin-top: 15px;
-	background: #0a4d91;
+	background: var(--text-dark);
 	color: white;
-	padding: 8px 16px;
+	padding: 10px 24px;
 	border: none;
-	border-radius: 5px;
+	border-radius: var(--radius-sm);
+	font-weight: 600;
 	cursor: pointer;
+	transition: var(--transition);
+	margin-top: 20px;
 }
 
-
+.close-btn:hover {
+	background: var(--primary);
+}
 
 .about-page {
-	position: relative;
-	padding: 40px 20px;
-	font-family: Arial, sans-serif;
+	padding: 80px 20px;
 	max-width: 800px;
 	margin: auto;
 }
+
 .about-page h1 {
 	text-align: center;
-	color: #0a4d91;
-	margin-bottom: 20px;
-	font-size: 38px;
+	color: var(--text-dark);
+	margin-bottom: 40px;
+	font-size: 42px;
+	font-weight: 800;
 }
+
 .about-content p {
-	position: relative;
-	top: 10px;
-	font-size: 17px;
-	line-height: 1.6;
-	margin-bottom: 15px;
+	font-size: 18px;
+	line-height: 1.8;
+	color: var(--text-main);
+	margin-bottom: 25px;
 	text-align: justify;
 }
+
 .about-content h2 {
-	margin-top: 30px;
-	color: #0a4d91;
-	margin-bottom: 10px;
+	margin-top: 50px;
+	color: var(--primary);
+	margin-bottom: 20px;
+	font-size: 28px;
+	text-align: center;
 }
+
 .contact-list {
 	list-style: none;
 	padding: 0;
-	margin-top: 35px;
 	display: flex;
 	flex-direction: column;
-	align-items: center;   /* centers items horizontally */
-	text-align: center;    /* centers text */
+	align-items: center;
+	gap: 15px;
 }
 
 .contact-list li {
-	margin-bottom: 10px;
-	font-size: 15px;
+	font-size: 18px;
+	color: var(--text-main);
+	background: var(--bg-card);
+	padding: 15px 30px;
+	border-radius: var(--radius-sm);
+	box-shadow: var(--shadow-sm);
+	width: 100%;
+	max-width: 400px;
+	text-align: center;
+	border: 1px solid var(--border-light);
 }
-
 
 .contact-list a {
-	color: #0a4d91;
+	color: var(--primary);
 	text-decoration: none;
+	font-weight: 600;
 }
+
 .contact-list a:hover {
 	text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+	.hero-content h1 { font-size: 40px; }
+	.hero-content p { font-size: 18px; }
+	.features { padding: 50px 20px; }
+	.features h1 { font-size: 28px; }
+	.about-page { padding: 40px 20px; }
+	.about-page h1 { font-size: 32px; }
 }

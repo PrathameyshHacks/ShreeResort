@@ -1,4 +1,5 @@
 //AdminBookings.jsx
+//AdminBookings.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";  // Importing xlsx library
@@ -6,6 +7,7 @@ import "./AdminBookings.css";
 import AdminNav from "../components/AdminNav";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import AdminBillReview from "./AdminBillReview";
 
 export default function AdminBookings() {
 
@@ -28,6 +30,7 @@ export default function AdminBookings() {
 	const [rooms, setRooms] = useState([]);
 	const [activities, setActivities] = useState([]);
 	const [selectedActivities, setSelectedActivities] = useState([]);
+	const [billReviewBooking, setBillReviewBooking] = useState(null); // 📦 bill review state
 	const [form, setForm] = useState({
 		name: "",
 		contact: "",
@@ -190,65 +193,61 @@ export default function AdminBookings() {
 			const booking = bookings.find((b) => b._id === id);
 			if (!booking) return;
 
-			const updatedBooking = { ...booking };
+			const now = new Date();
+
+			// 🔥 Only send required fields (IMPORTANT FIX)
+			const updatedBooking = {
+				status: newStatus,
+			};
 
 			// ================= CHECK-IN =================
 			if (newStatus === "Checked In") {
-				updatedBooking.status = "Checked In";
 
 				// Assign room if not assigned
-				if (!updatedBooking.roomno) {
-					updatedBooking.roomno = getAvailableRoomNo(
+				if (!booking.roomno) {
+					const roomNo = getAvailableRoomNo(
 						booking.room,
 						booking.checkin,
 						booking.checkout
 					);
+
+					if (!roomNo) {
+						alert("No rooms available");
+						return;
+					}
+
+					updatedBooking.roomno = roomNo;
 				}
 
-				// ✅ STORE ACTUAL CHECK-IN DATE & TIME
-				const now = new Date();
+				// ✅ Store actual check-in
 				updatedBooking.actualCheckIn = now.toISOString();
-				updatedBooking.checkInTime = getTimeNow();
-
-				await fetchRooms();
+				updatedBooking.checkInTime = now.toISOString();
 			}
 
 			// ================= CHECK-OUT =================
 			if (newStatus === "Checked Out") {
-				updatedBooking.status = "Checked Out";
-
-				const now = new Date();
-
-				// ✅ STORE ACTUAL CHECK-OUT
-				updatedBooking.actualCheckOut = now.toISOString();
-				updatedBooking.checkOutTime = now.toISOString();
-
-				// ✅ USE ACTUAL DATES FOR BILL
-				const roomBill = calculateBill(
-					updatedBooking.actualCheckIn || booking.checkin,
-					updatedBooking.actualCheckOut,
-					booking.room
-				);
-
-				const activitiesBill =
-					(updatedBooking.activities || []).reduce((sum, a) => sum + a.price, 0);
-
-				const totalBill = roomBill + activitiesBill;
-
-				updatedBooking.totalBill = totalBill;
-
+				// ⭐ Open Bill Review instead of direct checkout
+				const booking = bookings.find((b) => b._id === id);
+				if (booking) setBillReviewBooking(booking);
+				return; // stop here — do NOT call API
 			}
 
-			await axios.put(`${API}/api/bookings/${id}`, updatedBooking);
+			// 🔥 Send CLEAN object (not full booking)
+			const res = await axios.put(
+				`${API}/api/bookings/${id}`,
+				updatedBooking
+			);
 
+			// ✅ Update UI with backend response
 			setBookings((prev) =>
-				prev.map((b) => (b._id === id ? updatedBooking : b))
+				prev.map((b) => (b._id === id ? res.data : b))
 			);
 
 			await fetchRooms();
 
 		} catch (err) {
 			console.error("Error updating status:", err);
+			alert("Status update failed");
 		}
 	};
 
@@ -668,7 +667,12 @@ export default function AdminBookings() {
 												</>
 											)}
 											{b.status === "Checked In" && (
-												<button onClick={() => updateStatus(b._id, "Checked Out")}>Check Out</button>
+												<button
+													style={{ backgroundColor: "#17a2b8", color: "white" }}
+													onClick={() => setBillReviewBooking(b)}
+												>
+													🧳 Check Out
+												</button>
 											)}
 											{b.status === "Checked Out" && (
 												<a href={`${API}/api/pdfs/invoice/${b._id}`} target="_blank" rel="noreferrer">
@@ -788,6 +792,20 @@ export default function AdminBookings() {
 			)}
 
 			<Footer />
+
+			{/* 🏦 BILL REVIEW MODAL */}
+			{billReviewBooking && (
+				<AdminBillReview
+					booking={billReviewBooking}
+					rooms={rooms}
+					onClose={() => setBillReviewBooking(null)}
+					onFinalized={(updatedBooking) => {
+						setBookings(prev => prev.map(b => b._id === updatedBooking._id ? updatedBooking : b));
+						setBillReviewBooking(null);
+						fetchRooms();
+					}}
+				/>
+			)}
 		</>
 	);
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AdminNav from "../components/AdminNav";
+import "./AdminRooms.css";
 
 export default function AdminActivities() {
 	const API = "http://localhost:5000";
@@ -153,6 +154,7 @@ export default function AdminActivities() {
 							multiple
 							accept="image/*"
 							onChange={handleImageChange}
+							className="full-width"
 						/>
 						<textarea
 							name="description"
@@ -216,86 +218,6 @@ export default function AdminActivities() {
 				)}
 			</div>
 
-			<style>{`
-				.admin-rooms {
-					padding: 30px;
-					font-family: Arial, sans-serif;
-					background: #fdffe0ff;
-					min-height: 100vh;
-				}
-				.admin-rooms h1 {
-					text-align: center;
-					color: #0a4d91;
-					margin-bottom: 25px;
-				}
-				.room-form {
-					background: #f8f8f8;
-					padding: 20px;
-					border-radius: 8px;
-					max-width: 600px;
-					margin: 0 auto 30px;
-					box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-				}
-				.room-form h2 {
-					color: #0a4d91;
-					text-align: center;
-					margin-bottom: 15px;
-				}
-				.room-form form {
-					display: flex;
-					flex-direction: column;
-					gap: 10px;
-				}
-
-				.room-list-admin {
-					background: #f4f9ff;
-					padding: 20px;
-					border-radius: 8px;
-					overflow-x: auto;
-				}
-				.room-form input,
-				.room-form select,
-				.room-form textarea {
-					padding: 8px;
-					border: 1px solid #ccc;
-					border-radius: 4px;
-				}
-				.room-form button {
-					background: #0a4d91;
-					color: white;
-					border: none;
-					padding: 8px;
-					border-radius: 4px;
-					cursor: pointer;
-				}
-				.room-form button:hover {
-					background: #083b70;
-				}
-				.cancel-btn {
-					background: #888 !important;
-				}
-				table {
-					width: 100%;
-					border-collapse: collapse;
-				}
-				th, td {
-					border: 1px solid #ddd;
-					padding: 8px;
-					text-align: center;
-				}
-				th {
-					background: #0a4d91;
-					color: white;
-				}
-				.thumb {
-					width: 80px;
-					height: 60px;
-					object-fit: cover;
-					margin-right: 5px;
-				}
-				.edit-btn { background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; margin-right: 5px; }
-				.delete-btn { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
-			`}</style>
 		</>
 	);
 }

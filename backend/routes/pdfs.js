@@ -46,7 +46,6 @@ const calculateStay = (checkIn, checkOut, roomPrice = 0) => {
 	const end = new Date(checkOut);
 
 	let diff = end - start;
-
 	let nights = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
 	// ✅ FIX: minimum 1 night
@@ -220,7 +219,7 @@ router.get("/cancel/:id", async (req, res) => {
 });
 
 // =====================================================
-// 3. FINAL INVOICE PDF (ACTUAL DATES)
+// 3. FINAL INVOICE PDF — uses reviewed billSummary
 // =====================================================
 router.get("/invoice/:id", async (req, res) => {
 	try {
@@ -239,60 +238,87 @@ router.get("/invoice/:id", async (req, res) => {
 
 		doc.font("Helvetica").fontSize(12);
 
-		const actualCheckIn = booking.checkInTime;
+		const actualCheckIn  = booking.checkInTime;
 		const actualCheckOut = booking.checkOutTime;
 
-		const start = new Date(actualCheckIn);
-		const end = new Date(actualCheckOut);
-
-		start.setHours(0, 0, 0, 0);
-		end.setHours(0, 0, 0, 0);
-
-		const roomDoc = await Room.findOne({ title: booking.room });
+		const roomDoc   = await Room.findOne({ title: booking.room });
 		const roomPrice = roomDoc?.price || 0;
-		const { nights, total } = calculateStay(actualCheckIn, actualCheckOut, roomPrice);
+		const { nights } = calculateStay(actualCheckIn, actualCheckOut, roomPrice);
 
+		// ── Customer details block ──
 		doc.font("Helvetica-Bold").text("Customer & Booking Details:", LEFT_MARGIN);
 		doc.moveDown(0.5);
 
 		doc.font("Helvetica");
-		doc.text(`Customer Name: ${booking.name}`, LEFT_MARGIN);
-		doc.text(`Contact: ${booking.contact}`, LEFT_MARGIN);
-		doc.text(`Booking ID: ${booking._id}`, LEFT_MARGIN);
-		doc.text(`Room Type: ${booking.room}`, LEFT_MARGIN);
-		doc.text(`Room No: ${booking.roomno || "N/A"}`, LEFT_MARGIN);
+		doc.text(`Customer Name: ${booking.name}`,      LEFT_MARGIN);
+		doc.text(`Contact: ${booking.contact}`,          LEFT_MARGIN);
+		doc.text(`Booking ID: ${booking._id}`,           LEFT_MARGIN);
+		doc.text(`Room Type: ${booking.room}`,           LEFT_MARGIN);
+		doc.text(`Room No: ${booking.roomno || "N/A"}`,  LEFT_MARGIN);
 		doc.moveDown();
-
-		doc.text(`Check-in: ${formatDate(actualCheckIn)}`, LEFT_MARGIN);
-		doc.text(`Check-out: ${formatDate(actualCheckOut)}`, LEFT_MARGIN);
-		doc.text(`Stay: ${nights} night(s)`, LEFT_MARGIN);
+		doc.text(`Check-in: ${formatDate(actualCheckIn)}`,   LEFT_MARGIN);
+		doc.text(`Check-out: ${formatDate(actualCheckOut)}`,  LEFT_MARGIN);
+		doc.text(`Stay: ${nights} night(s)`,             LEFT_MARGIN);
 		doc.text(`No Of Person: ${booking.noOfPersons}`, LEFT_MARGIN);
 		doc.moveDown();
-
 		doc.text(`Total Amount: ₹ ${booking.totalBill}`, LEFT_MARGIN);
-		doc.text(`Status: ${booking.status}`, LEFT_MARGIN);
-
+		doc.text(`Status: ${booking.status}`,            LEFT_MARGIN);
 		doc.moveDown(1.5);
 
-		let rows = [];
-		let activitiesTotal = 0;
+		// ── Decide: reviewed bill or legacy fallback ──
+		const hasBill = booking.billSummary && booking.billSummary.grandTotal > 0;
 
-		rows.push([
-			`Room (${booking.room})`,
-			`${nights} night(s) × ₹${roomPrice}`,
-			`₹ ${total}`,
-		]);
+		let rows  = [];
+		let grand = 0;
 
-		if (booking.activities?.length > 0) {
-			booking.activities.forEach((act) => {
-				rows.push([act.name, "-", `₹ ${act.price}`]);
-				activitiesTotal += act.price;
-			});
+		if (hasBill) {
+			// ── SEC A: Stay Bill ──
+			const roomTotal = booking.billSummary.roomTotal || 0;
+			rows.push([`[A] Stay Bill — ${booking.room}`, `${nights} night(s)`, `₹ ${roomTotal}`]);
+
+			// ── SEC B: Activity Bill ──
+			if (booking.billActivities?.length > 0) {
+				booking.billActivities.forEach((a) => {
+					rows.push([
+						`[B] ${a.name}`,
+						`₹${a.pricePerPerson} × ${a.persons} person(s)`,
+						`₹ ${a.total}`,
+					]);
+				});
+			} else {
+				rows.push(["[B] No Activities", "-", "₹ 0"]);
+			}
+
+			// ── SEC C: Extra Charges ──
+			if (booking.extraCharges?.length > 0) {
+				booking.extraCharges.forEach((c) => {
+					rows.push([`[C] ${c.chargeType}`, "Extra Charge", `₹ ${c.amount}`]);
+				});
+			} else {
+				rows.push(["[C] No Extra Charges", "-", "₹ 0"]);
+			}
+
+			grand = booking.billSummary.grandTotal;
+			rows.push(["GRAND TOTAL  (A + B + C)", "", `₹ ${grand}`]);
+
 		} else {
-			rows.push(["No Activities", "-", "₹ 0"]);
-		}
+			// Legacy fallback (old bookings without reviewed bill)
+			const { total } = calculateStay(actualCheckIn, actualCheckOut, roomPrice);
+			let activitiesTotal = 0;
+			rows.push([`Room (${booking.room})`, `${nights} night(s) × ₹${roomPrice}`, `₹ ${total}`]);
 
-		rows.push(["TOTAL", "", `₹ ${total + activitiesTotal}`]);
+			if (booking.activities?.length > 0) {
+				booking.activities.forEach((act) => {
+					rows.push([act.name, "-", `₹ ${act.price}`]);
+					activitiesTotal += act.price;
+				});
+			} else {
+				rows.push(["No Activities", "-", "₹ 0"]);
+			}
+
+			grand = total + activitiesTotal;
+			rows.push(["TOTAL", "", `₹ ${grand}`]);
+		}
 
 		doc.font("Helvetica-Bold")
 			.text("Invoice Details:", LEFT_MARGIN, doc.y, { underline: true });
@@ -303,6 +329,7 @@ router.get("/invoice/:id", async (req, res) => {
 		doc.end();
 
 	} catch (err) {
+		console.error(err);
 		res.status(500).json({ message: "Error generating PDF" });
 	}
 });

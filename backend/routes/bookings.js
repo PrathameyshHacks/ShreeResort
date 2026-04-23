@@ -1,4 +1,5 @@
 //bookings.js
+//bookings.js
 const express = require("express");
 const router = express.Router();
 const Booking = require("../models/Booking");
@@ -211,10 +212,51 @@ router.put("/:id", upload.single("docFile"), async (req, res) => {
 			return res.status(404).json({ message: "Booking not found" });
 		}
 
-		Object.assign(booking, req.body);
+		// 🔥 ONLY allow safe fields
+		const allowedFields = [
+			"name",
+			"contact",
+			"room",
+			"roomno",
+			"checkin",
+			"checkout",
+			"status",
+			"checkInTime",
+			"checkOutTime",
+			"actualCheckIn",
+			"actualCheckOut",
+			"totalBill",
+			"activities",
+			"totalActivities",
+			"billActivities",
+			"extraCharges",
+			"billSummary",
+			"noOfPersons",
+			"adult",
+			"child"
+		];
 
+		allowedFields.forEach((field) => {
+			if (req.body[field] !== undefined) {
+				booking[field] = req.body[field];
+			}
+		});
+
+		// 🔥 Convert dates properly
+		if (req.body.checkin) {
+			booking.checkin = new Date(req.body.checkin);
+		}
+		if (req.body.checkout) {
+			booking.checkout = new Date(req.body.checkout);
+		}
+
+		// 🔥 Parse activities safely
+		if (req.body.activities && typeof req.body.activities === "string") {
+			booking.activities = JSON.parse(req.body.activities);
+		}
+
+		// file update
 		if (req.file) {
-			// delete old doc
 			if (booking.docFile) {
 				const publicId = booking.docFile.split("/").pop().split(".")[0];
 				await cloudinary.uploader.destroy("booking_docs/" + publicId);
@@ -273,6 +315,30 @@ router.get("/:id", async (req, res) => {
 		if (!booking) return res.status(404).json({ message: "Booking not found" });
 		res.json(booking);
 	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
+/* ================= FINALIZE BILL & CHECKOUT ================= */
+router.put("/:id/finalize", async (req, res) => {
+	try {
+		const booking = await Booking.findById(req.params.id);
+		if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+		const { billActivities, extraCharges, billSummary } = req.body;
+
+		booking.billActivities = billActivities || [];
+		booking.extraCharges = extraCharges || [];
+		booking.billSummary = billSummary || {};
+		booking.totalBill = billSummary?.grandTotal || 0;
+		booking.status = "Checked Out";
+		booking.checkOutTime = new Date().toISOString();
+		booking.actualCheckOut = new Date();
+
+		await booking.save();
+		res.json({ message: "Bill finalized", booking });
+	} catch (err) {
+		console.error("❌ FINALIZE ERROR:", err);
 		res.status(500).json({ error: err.message });
 	}
 });

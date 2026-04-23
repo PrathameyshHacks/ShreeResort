@@ -21,7 +21,9 @@ export default function BookingPage() {
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
 	const [zoomImage, setZoomImage] = useState(null);
 
+	const [selectedActivity, setSelectedActivity] = useState(null);
 	const [availabilityMap, setAvailabilityMap] = useState({});
+	const [reviewMap, setReviewMap] = useState({}); // key: roomTitle or activityId -> { avgRating, count, reviews }
 
 	const [activities, setActivities] = useState([]);
 	const [selectedActivities, setSelectedActivities] = useState([]);
@@ -57,6 +59,20 @@ export default function BookingPage() {
 		fetchRooms();
 	}, []);
 
+	// Fetch room review summaries once rooms list loads
+	useEffect(() => {
+		if (!rooms.length) return;
+		const fetchRoomReviews = async () => {
+			for (const room of rooms) {
+				try {
+					const res = await axios.get(`${API}/api/reviews/summary/room/${encodeURIComponent(room.title)}`);
+					setReviewMap(prev => ({ ...prev, [room.title]: res.data }));
+				} catch (_) {}
+			}
+		};
+		fetchRoomReviews();
+	}, [rooms]);
+
 	useEffect(() => {
 		const fetchActivities = async () => {
 			try {
@@ -68,6 +84,20 @@ export default function BookingPage() {
 		};
 		fetchActivities();
 	}, []);
+
+	// Fetch activity review summaries once activities load
+	useEffect(() => {
+		if (!activities.length) return;
+		const fetchActReviews = async () => {
+			for (const act of activities) {
+				try {
+					const res = await axios.get(`${API}/api/reviews/summary/activity/${act._id}`);
+					setReviewMap(prev => ({ ...prev, [act._id]: res.data }));
+				} catch (_) {}
+			}
+		};
+		fetchActReviews();
+	}, [activities]);
 
 
 	useEffect(() => {
@@ -330,6 +360,26 @@ export default function BookingPage() {
 									<p>{room.description}</p>
 									<p className="price">₹ {room.price} / night</p>
 
+									{/* ⭐ ROOM RATING & RECENT REVIEWS */}
+									{reviewMap[room.title]?.avgRating ? (
+										<>
+											<p style={{ color: "#f5a623", fontWeight: "bold", margin: "4px 0" }}>
+												⭐ {reviewMap[room.title].avgRating} / 5
+												<span style={{ color: "#666", fontWeight: "normal", fontSize: "13px" }}>
+													{" "}({reviewMap[room.title].count} review{reviewMap[room.title].count !== 1 ? "s" : ""})
+												</span>
+											</p>
+											{reviewMap[room.title].reviews?.slice(0, 2).map((r, i) => (
+												<div key={i} style={{ background: "#fff", padding: "6px 8px", borderRadius: "4px", fontSize: "12px", border: "1px solid #ddd", marginBottom: "4px", textAlign: "left" }}>
+													<strong>{r.userName}</strong> <span style={{color: "#f5a623"}}>{"★".repeat(r.rating)}</span>
+													<p style={{ margin: "2px 0 0 0", fontStyle: "italic", color: "#444" }}>"{r.reviewText}"</p>
+												</div>
+											))}
+										</>
+									) : (
+										<p style={{ color: "#999", fontSize: "13px", margin: "4px 0" }}>No reviews yet</p>
+									)}
+
 									{/* 🔥 AVAILABILITY STATUS */}
 									<p className={`availability ${status.type}`}>
 										{status.type === "available" && `✅ ${status.count} rooms available`}
@@ -365,11 +415,35 @@ export default function BookingPage() {
 										<img
 											src={act.images?.[0]}
 											alt={act.name}
+											onClick={() => {
+												setSelectedActivity(act);
+												setSelectedRoom(null); // important reset
+												setCurrentImageIndex(0);
+												setShowImageModal(true);
+											}}
 										/>
 										<h3>{act.name}</h3>
 										<p>{act.description}</p>
 										<p>📍 {act.location} | ⏳ {act.duration}</p>
 										<p className="price">₹ {act.price}</p>
+										
+										{/* ⭐ ACTIVITY RATING & RECENT REVIEWS */}
+										{reviewMap[act._id]?.avgRating ? (
+											<>
+												<p style={{ color: "#f5a623", fontWeight: "bold", margin: "4px 0" }}>
+													⭐ {reviewMap[act._id].avgRating} / 5
+													<span style={{ color: "#666", fontWeight: "normal", fontSize: "13px" }}> ({reviewMap[act._id].count} review{reviewMap[act._id].count !== 1 ? "s" : ""})</span>
+												</p>
+												{reviewMap[act._id].reviews?.slice(0, 2).map((r, i) => (
+													<div key={i} style={{ background: "#fff", padding: "6px 8px", borderRadius: "4px", fontSize: "12px", border: "1px solid #ddd", marginBottom: "4px", textAlign: "left" }}>
+														<strong>{r.userName}</strong> <span style={{color: "#f5a623"}}>{"★".repeat(r.rating)}</span>
+														<p style={{ margin: "2px 0 0 0", fontStyle: "italic", color: "#444" }}>"{r.reviewText}"</p>
+													</div>
+												))}
+											</>
+										) : (
+											<p style={{ color: "#999", fontSize: "13px", margin: "4px 0" }}>No reviews yet</p>
+										)}
 										<button
 											style={{ backgroundColor: isSelected ? "#28a745" : "#0a4d91" }}
 											onClick={() => handleActivityToggle(act)}
@@ -385,61 +459,66 @@ export default function BookingPage() {
 			</div>
 
 			{/* IMAGE PREVIEW MODAL */}
-			{showImageModal && selectedRoom && (
+			{showImageModal && (selectedRoom || selectedActivity) && (
 				<div className="image-modal-overlay" onClick={() => setShowImageModal(false)}>
 					<div className="image-modal" onClick={e => e.stopPropagation()}>
-						<h2>{selectedRoom.title}</h2>
+						
+						{(() => {
+							const currentItem = selectedRoom || selectedActivity;
+							
+							return (
+								<>
+									<h2>{currentItem.title || currentItem.name}</h2>
 
-						<div className="slider-container">
+									<div className="slider-container">
 
-							{/* PREV BUTTON */}
-							<button
-								className="nav-btn prev"
-								onClick={() =>
-									setCurrentImageIndex(prev =>
-										prev === 0 ? selectedRoom.images.length - 1 : prev - 1
-									)
-								}
-							>
-								❮
-							</button>
+										<button
+											className="nav-btn prev"
+											onClick={() =>
+												setCurrentImageIndex(prev =>
+													prev === 0 ? currentItem.images.length - 1 : prev - 1
+												)
+											}
+										>
+											❮
+										</button>
 
-							{/* MAIN IMAGE */}
-							<img
-								src={selectedRoom.images[currentImageIndex]}
-								alt="room"
-								className="main-image"
-								onClick={() => setZoomImage(selectedRoom.images[currentImageIndex])}
-							/>
+										<img
+											src={currentItem.images[currentImageIndex]}
+											alt="preview"
+											className="main-image"
+											onClick={() => setZoomImage(currentItem.images[currentImageIndex])}
+										/>
 
-							{/* NEXT BUTTON */}
-							<button
-								className="nav-btn next"
-								onClick={() =>
-									setCurrentImageIndex(prev =>
-										prev === selectedRoom.images.length - 1 ? 0 : prev + 1
-									)
-								}
-							>
-								❯
-							</button>
-						</div>
+										<button
+											className="nav-btn next"
+											onClick={() =>
+												setCurrentImageIndex(prev =>
+													prev === currentItem.images.length - 1 ? 0 : prev + 1
+												)
+											}
+										>
+											❯
+										</button>
+									</div>
 
-						{/* THUMBNAILS */}
-						<div className="thumbnail-row">
-							{selectedRoom.images.map((img, i) => (
-								<img
-									key={i}
-									src={img}
-									className={`thumb ${i === currentImageIndex ? "active" : ""}`}
-									onClick={() => setCurrentImageIndex(i)}
-								/>
-							))}
-						</div>
+									<div className="thumbnail-row">
+										{currentItem.images.map((img, i) => (
+											<img
+												key={i}
+												src={img}
+												className={`thumb ${i === currentImageIndex ? "active" : ""}`}
+												onClick={() => setCurrentImageIndex(i)}
+											/>
+										))}
+									</div>
 
-						<button className="close-btn" onClick={() => setShowImageModal(false)}>
-							Close
-						</button>
+									<button className="close-btn" onClick={() => setShowImageModal(false)}>
+										Close
+									</button>
+								</>
+							);
+						})()}
 					</div>
 				</div>
 			)}

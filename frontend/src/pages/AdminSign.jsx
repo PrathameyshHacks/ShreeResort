@@ -69,11 +69,11 @@ export default function AdminSign() {
   };
 
   return (
-    <div className="allP">
-      <div className="AdminCont">
+    <div className="admin-login-container">
+      <div className="admin-login-box">
         <h1>Admin Registration</h1>
 
-        <form onSubmit={handleSubmit} className="AdForm">
+        <form onSubmit={handleSubmit}>
           <input
             type="text"
             name="name"
@@ -110,33 +110,36 @@ export default function AdminSign() {
             required
           />
 
-          <ul className="password-requirements">
-            <li style={{ color: passwordValid.length ? "green" : "red" }}>
-              At least 8 characters
-            </li>
-            <li style={{ color: passwordValid.uppercase ? "green" : "red" }}>
-              One uppercase letter
-            </li>
-            <li style={{ color: passwordValid.lowercase ? "green" : "red" }}>
-              One lowercase letter
-            </li>
-            <li style={{ color: passwordValid.number ? "green" : "red" }}>
-              One number
-            </li>
-            <li style={{ color: passwordValid.special ? "green" : "red" }}>
-              One special character
-            </li>
-          </ul>
+          <div className="password-requirements-box">
+            <p>Password must contain:</p>
+            <ul>
+              <li className={passwordValid.length ? "valid" : "invalid"}>
+                {passwordValid.length ? "✓" : "○"} At least 8 characters
+              </li>
+              <li className={passwordValid.uppercase ? "valid" : "invalid"}>
+                {passwordValid.uppercase ? "✓" : "○"} One uppercase letter
+              </li>
+              <li className={passwordValid.lowercase ? "valid" : "invalid"}>
+                {passwordValid.lowercase ? "✓" : "○"} One lowercase letter
+              </li>
+              <li className={passwordValid.number ? "valid" : "invalid"}>
+                {passwordValid.number ? "✓" : "○"} One number
+              </li>
+              <li className={passwordValid.special ? "valid" : "invalid"}>
+                {passwordValid.special ? "✓" : "○"} One special character
+              </li>
+            </ul>
+          </div>
 
           <button type="submit" disabled={loading}>
             {loading ? "Registering..." : "Sign Up"}
           </button>
         </form>
 
-        <p style={{ textAlign: "center" }}>
+        <p className="signup-text">
           Already have an account?{" "}
-          <Link to="/login" className="adLl">
-            Login
+          <Link to="/login" className="adLn">
+            Login here
           </Link>
         </p>
       </div>

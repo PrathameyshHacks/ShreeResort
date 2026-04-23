@@ -34,7 +34,8 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/bookings", require("./routes/bookings"));
 app.use("/api/guests", guestRoutes);
 app.use("/api/activities", require("./routes/activities"));
-app.use("/api/pdfs", require("./routes/pdfs"));
+app.use("/api/pdfs",       require("./routes/pdfs"));
+app.use("/api/reviews",    require("./routes/reviews"));
 
 /* ================= HEALTH CHECK ================= */
 app.get("/", (req, res) => {

@@ -3,6 +3,7 @@ import axios from "axios";
 import AdminNav from "../components/AdminNav";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import "./AdminRooms.css";
 
 export default function AdminRooms() {
 
@@ -299,6 +300,7 @@ export default function AdminRooms() {
 							multiple
 							accept="image/*"
 							onChange={handleFileChange}
+							className="full-width"
 						/>
 						{fileError && <p style={{ color: "red" }}>{fileError}</p>}
 						<textarea
@@ -425,119 +427,6 @@ export default function AdminRooms() {
 			</div>
 			<Footer />
 
-			<style>{`
-				.admin-rooms {
-					padding: 30px;
-					font-family: Arial, sans-serif;
-					background: #fdffe0ff;
-				}
-				.admin-rooms h1 {
-					text-align: center;
-					color: #0a4d91;
-					margin-bottom: 25px;
-				}
-				.room-form {
-					background: #f8f8f8;
-					padding: 20px;
-					border-radius: 8px;
-					max-width: 600px;
-					margin: 0 auto 30px;
-					box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-				}
-				.room-form h2 {
-					color: #0a4d91;
-					text-align: center;
-					margin-bottom: 15px;
-				}
-				.room-form form {
-					display: flex;
-					flex-direction: column;
-					gap: 10px;
-				}
-
-				.room-list-admin {
-					background: #f4f9ff;
-					padding: 20px;
-					border-radius: 8px;
-				}
-				.room-form input,
-				.room-form select,
-				.room-form textarea {
-					padding: 8px;
-					border: 1px solid #ccc;
-					border-radius: 4px;
-				}
-				.room-form button {
-					background: #0a4d91;
-					color: white;
-					border: none;
-					padding: 8px;
-					border-radius: 4px;
-					cursor: pointer;
-				}
-				.room-form button:hover {
-					background: #083b70;
-				}
-				.cancel-btn {
-					background: #888;
-				}
-				table {
-					width: 100%;
-					border-collapse: collapse;
-				}
-				th, td {
-					border: 1px solid #ddd;
-					padding: 8px;
-					text-align: center;
-				}
-				th {
-					background: #0a4d91;
-					color: white;
-				}
-				.thumb {
-					width: 80px;
-					height: 60px;
-					object-fit: cover;
-				}
-				.edit-btn { background: #ffc107; }
-				.delete-btn { background: #dc3545; color:white; }
-				.room-count-controls {
-					display: flex;
-					justify-content: center;
-					gap: 6px;
-				}
-				.room-count-controls button {
-					background: #0a4d91;
-					color: white;
-					border: none;
-					padding: 4px 8px;
-					border-radius: 4px;
-					cursor: pointer;
-				}
-				.room-count-controls button:hover {
-					background: #083b70;
-				}
-				.booked { color: red; font-weight: bold; }
-				.vacant { color: green; font-weight: bold; }
-
-				.availability-section {
-	margin-top: 40px;
-	background: #f4f9ff;
-	padding: 20px;
-	border-radius: 8px;
-}
-
-.date-picker {
-	display: flex;
-	justify-content: center;
-	gap: 10px;
-	margin-bottom: 15px;
-	font-weight: bold;
-}
-
-
-
-			`}</style>
 		</>
 	);
 }

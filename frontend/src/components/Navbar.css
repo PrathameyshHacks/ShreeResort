@@ -6,69 +6,106 @@
 
 html, body {
 	width: 100%;
-	overflow-x: hidden; /* 🔥 fixes left-right shift */
+	overflow-x: hidden;
 }
-
 
 .header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	/*padding: 15px 40px;*/
-    width: 100%;
-    height: 10vh;
-	background-color: #a3f1ff;
-	
+	padding: 0 40px;
+	width: 100%;
+	height: 70px;
+	background-color: var(--bg-card);
+	box-shadow: var(--shadow-sm);
 	position: fixed;
 	top: 0;
 	z-index: 100;
+	transition: var(--transition);
 }
 
-
 .dummyHead {
-
-    height:10vh;
-    background-color: #a3f1ff;
-
+	height: 70px;
+	background-color: var(--bg-main);
 }
 
 .logo-link {
-    display: flex;
-	font-size: 28px;
-	font-weight: bold;
-	color: #0a4d91;
+	display: flex;
+	font-size: 24px;
+	font-weight: 800;
+	color: var(--primary);
 	text-decoration: none;
-    margin-left: 20px;
+	letter-spacing: -0.5px;
 }
 
-
-.nav{
-
-    display: flex;
-    width: 35%;
-    justify-content: space-around;
-    align-items: center;
-
-
+.nav {
+	display: flex;
+	gap: 24px;
+	align-items: center;
 }
 
 .nav a {
 	text-decoration: none;
-	color: #333;
-	font-weight: 500;
+	color: var(--text-main);
+	font-weight: 600;
+	font-size: 15px;
+	transition: var(--transition);
 }
 
 .nav a:hover {
-	color: #0a4d91;
+	color: var(--primary);
 }
 
 .nav .btn {
-	background-color: #0a4d91;
+	background-color: var(--primary);
 	color: #fff;
-	padding: 8px 14px;
-	border-radius: 4px;
+	padding: 10px 20px;
+	border-radius: var(--radius-sm);
+	font-weight: 600;
+	border: none;
+	transition: var(--transition);
 }
 
 .nav .btn:hover {
-	color: #b8fffb;
+	background-color: var(--primary-hover);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle {
+	background: var(--bg-main);
+	border: 1px solid var(--border-light);
+	font-size: 20px;
+	cursor: pointer;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: var(--transition);
+	margin-left: 10px;
+}
+
+.theme-toggle:hover {
+	background: var(--border-light);
+	transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+	.header {
+		padding: 0 20px;
+	}
+	.logo-link {
+		font-size: 20px;
+	}
+	.nav {
+		gap: 12px;
+	}
+	.nav a {
+		font-size: 14px;
+	}
+	.nav .btn {
+		padding: 8px 14px;
+	}
 }

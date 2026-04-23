@@ -1,78 +1,131 @@
-.allP {
-	height: 100vh;
-	position: relative;
+.admin-login-container {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background-color: rgb(199, 255, 199);
+	min-height: 100vh;
+	background-color: var(--bg-main);
+	padding: 20px;
 }
 
-.AdminCont {
-	position: fixed;
-	width: 550px;
+.admin-login-box {
+	background: var(--bg-card);
 	padding: 40px;
-	background: white;
-	border-radius: 15px;
-	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-lg);
+	width: 100%;
+	max-width: 400px;
+	border: 1px solid var(--border-light);
 }
 
-.AdminCont h1 {
+.admin-login-box h1 {
 	text-align: center;
-	color: #333;
-	margin-bottom: 25px;
+	color: var(--text-dark);
+	margin-top: 0;
+	margin-bottom: 30px;
+	font-size: 28px;
+	font-weight: 800;
 }
 
-/* INPUTS */
-.AdForm input[type="text"],
-.AdForm input[type="email"],
-.AdForm input[type="tel"],
-.AdForm input[type="password"] {
+.admin-login-box input[type="email"],
+.admin-login-box input[type="password"],
+.admin-login-box input[type="text"] {
 	width: 100%;
-	padding: 12px;
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	margin-bottom: 15px;
-	font-size: 14px;
-}
-
-/* PASSWORD RULES */
-.AdForm .password-requirements {
-	font-size: 14px;
-	color: #393939;
-	list-style-type: disc;
-	padding-left: 20px;
+	padding: 12px 15px;
 	margin-bottom: 20px;
+	border: 1px solid var(--border-light);
+	border-radius: var(--radius-sm);
+	font-size: 15px;
+	font-family: inherit;
+	box-sizing: border-box;
+	transition: var(--transition);
+	background-color: #fafafa;
 }
 
-/* BUTTON */
-.AdForm button {
+.admin-login-box input:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(10, 77, 145, 0.1);
+	background-color: white;
+}
+
+.admin-login-box button {
 	width: 100%;
-	padding: 12px;
-	background-color: #191991;
+	padding: 14px;
+	background: var(--primary);
 	color: white;
 	border: none;
-	border-radius: 5px;
+	border-radius: var(--radius-sm);
+	font-size: 16px;
+	font-weight: 600;
 	cursor: pointer;
-	font-size: 16px;
+	transition: var(--transition);
+	box-shadow: var(--shadow-sm);
 }
 
-.AdForm button:hover {
-	background-color: #1525d2;
+.admin-login-box button:hover:not(:disabled) {
+	background: var(--primary-hover);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-md);
 }
 
-/* LOGIN LINK */
-.AdminCont p {
+.admin-login-box button:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.signup-text {
 	text-align: center;
-	margin-top: 15px;
-	font-size: 16px;
+	margin-top: 25px;
+	font-size: 14px;
+	color: var(--text-muted);
 }
 
-.AdminCont .adLl {
-	color: #6a1b9a;
+.password-requirements-box {
+	background: #f8fafc;
+	padding: 15px;
+	border-radius: var(--radius-sm);
+	margin-bottom: 20px;
+	border: 1px solid var(--border-light);
+}
+
+.password-requirements-box p {
+	margin: 0 0 10px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-main);
+}
+
+.password-requirements-box ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.password-requirements-box li {
+	font-size: 12px;
+	margin-bottom: 5px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.password-requirements-box li.valid {
+	color: var(--secondary);
+}
+
+.password-requirements-box li.invalid {
+	color: var(--danger);
+	opacity: 0.8;
+}
+
+.adLn {
+	color: var(--primary);
 	text-decoration: none;
+	font-weight: 600;
+	transition: var(--transition);
 }
 
-.AdminCont .adLl:hover {
+.adLn:hover {
 	text-decoration: underline;
-	font-weight: bold;
+	color: var(--primary-hover);
 }
