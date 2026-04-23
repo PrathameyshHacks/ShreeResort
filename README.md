@@ -1,1 +1,1 @@
-live site - https://shreeresort.onrender.com/
+live site - https://shreeresort.onrender.com
