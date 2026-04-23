@@ -24,6 +24,7 @@ const handleLogout = () => {
                   <Link to="/admin">Dashboard</Link>
                   <Link to="/admin/bookings">Bookings</Link>
                   <Link to="/admin/rooms">Rooms</Link>
+                  <Link to="/admin/activities">Activities</Link>
                   <Link to="/admin/reports">Reports</Link>
                   <Link to="/admin/profile">Profile</Link>
                   <Link to="/login" className="btn" onClick={handleLogout}>Logout</Link>
@@ -47,15 +48,15 @@ const handleLogout = () => {
                     
                     .AdNav {
                       display: flex;
+                      flex-wrap: wrap;
                       justify-content: space-between;
                       align-items: center;
                       background-color: #a3f1ff;
-                     
-                      width:100%;
+                      padding: 15px 30px;
+                      width: 100%;
                       top: 0;
                       z-index: 100;
-                      height:10vh;
-                      position:fixed;
+                      position: fixed;
                     }
 
                     .logo {

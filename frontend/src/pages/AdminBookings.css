@@ -121,6 +121,18 @@ button:hover {
 	background: #6c757d;
 }
 
+.status.cancelled {
+	background: #e74c3c;
+}
+
+.cancel-btn {
+	background-color: #e74c3c !important;
+}
+
+.invoice-btn {
+	background-color: #27ae60 !important;
+}
+
 .preview-overlay {
 	position: fixed;
 	inset: 0;

@@ -1,3 +1,4 @@
+//Guest.js
 const mongoose = require('mongoose');
 
 const guestSchema = new mongoose.Schema({
@@ -5,7 +6,7 @@ const guestSchema = new mongoose.Schema({
   bookerContact: { type: String, required: true },
   memberName: { type: String, required: true },
   memberContact: { type: String },
-  memberAge: { type: Number},
+  memberAge: { type: Number },
   memberGender: { type: String, required: true },
   roomNo: { type: Number, required: true },
   checkin: { type: Date, required: true },

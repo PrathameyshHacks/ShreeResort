@@ -1,3 +1,4 @@
+//AdminBookings.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";  // Importing xlsx library
@@ -11,10 +12,10 @@ export default function AdminBookings() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-    	const token = localStorage.getItem("adminToken");
-	    if (!token) {
-	      navigate("/login"); // redirect if token is missing
-	    }
+		const token = localStorage.getItem("adminToken");
+		if (!token) {
+			navigate("/login"); // redirect if token is missing
+		}
 	}, [navigate]);
 
 	const API = process.env.REACT_APP_API_URL;
@@ -25,6 +26,8 @@ export default function AdminBookings() {
 	const [previewType, setPreviewType] = useState(null);
 	const [editingId, setEditingId] = useState(null);
 	const [rooms, setRooms] = useState([]);
+	const [activities, setActivities] = useState([]);
+	const [selectedActivities, setSelectedActivities] = useState([]);
 	const [form, setForm] = useState({
 		name: "",
 		contact: "",
@@ -59,6 +62,18 @@ export default function AdminBookings() {
 			}
 		};
 		fetchRooms();
+	}, []);
+
+	useEffect(() => {
+		const fetchActivities = async () => {
+			try {
+				const res = await axios.get(`${API}/api/activities`);
+				setActivities(res.data);
+			} catch (err) {
+				console.error("Error fetching activities:", err);
+			}
+		};
+		fetchActivities();
 	}, []);
 
 
@@ -96,19 +111,23 @@ export default function AdminBookings() {
 	}, []);
 
 
-	const getTimeNow = () => new Date().toISOString(); 
+	const getTimeNow = () => new Date().toISOString();
+	// This gives "2026-04-08T14:30:00.000Z"
 
-const calculateBill = (checkin, checkout, room, noOfPersons) => {
-	const checkInDate = new Date(checkin);
-	const checkOutDate = new Date(checkout);
+	const calculateBill = (actualCheckIn, actualCheckOut, room) => {
+		const checkInDate = new Date(actualCheckIn);
+		const checkOutDate = new Date(actualCheckOut);
 
-	const diffMs = checkOutDate - checkInDate;
-	if (isNaN(diffMs) || diffMs <= 0) return 0; // safeguard
+		const diffMs = checkOutDate - checkInDate;
+		if (isNaN(diffMs) || diffMs <= 0) return 0;
 
-	const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-	const roomData = rooms.find(r => r.title === room);
-	return days * (roomData?.price || 0) * noOfPersons;
-};
+		const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+		const roomData = rooms.find(r => r.title === room);
+		const roomPrice = roomData?.price || 0;
+
+		return days * roomPrice; // ✅ NO noOfPersons
+	};
 
 
 	const generateRoomNo = () => {
@@ -121,14 +140,15 @@ const calculateBill = (checkin, checkout, room, noOfPersons) => {
 		const conflictingBookings = bookings.filter(b =>
 			b.room === form.room &&
 			new Date(b.checkin) < new Date(form.checkout) &&
-			new Date(b.checkout) > new Date(form.checkin)
+			new Date(b.checkout) > new Date(form.checkin) &&
+			b.status !== "Checked Out"
 		);
 
 		const bookedNumbers = conflictingBookings.map(b => Number(b.roomno));
 
 		const available = room.roomNumbers.find(num => !bookedNumbers.includes(num));
 
-		if (!available) {
+		if (available === undefined) {
 			alert("No rooms available!");
 			return;
 		}
@@ -144,80 +164,109 @@ const calculateBill = (checkin, checkout, room, noOfPersons) => {
 		const conflictingBookings = bookings.filter(b =>
 			b.room === roomType &&
 			new Date(b.checkin) < new Date(checkout) &&
-			new Date(b.checkout) > new Date(checkin)
+			new Date(b.checkout) > new Date(checkin) &&
+			b.status !== "Checked Out"
 		);
 
 		const bookedNumbers = conflictingBookings.map(b => Number(b.roomno));
 
-		return room.roomNumbers?.find(num => !bookedNumbers.includes(num)) || null;
+		const available = room.roomNumbers?.find(num => !bookedNumbers.includes(num));
+		return available !== undefined ? available : null;
 	};
 
-const updateStatus = async (id, newStatus) => {
-	try {
-		const booking = bookings.find((b) => b._id === id);
-		if (!booking) return;
 
-		const updatedBooking = { ...booking };
-
-		if (newStatus === "Checked In") {
-			updatedBooking.status = "Checked In";
-			if (!updatedBooking.roomno) updatedBooking.roomno = getAvailableRoomNo(
-				booking.room,
-				booking.checkin,
-				booking.checkout
-			);
-			updatedBooking.checkInTime = getTimeNow(); // store full ISO string
+	const fetchRooms = async () => {
+		try {
+			const res = await axios.get(`${API}/api/rooms`);
+			setRooms(res.data);
+		} catch (err) {
+			console.error("Error fetching rooms:", err);
 		}
+	};
 
-if (newStatus === "Checked Out") {
-	updatedBooking.status = "Checked Out";
-	updatedBooking.checkOutTime = new Date().toISOString();
 
-	updatedBooking.totalBill = calculateBill(
-		booking.checkin,
-		booking.checkout,
-		booking.room,
-		booking.noOfPersons || 1
-	);
+	const updateStatus = async (id, newStatus) => {
+		try {
+			const booking = bookings.find((b) => b._id === id);
+			if (!booking) return;
 
-	// ✅ find room
-	const room = rooms.find(r => r.title === booking.room);
+			const updatedBooking = { ...booking };
 
-	if (room) {
-		const token = localStorage.getItem("adminToken");
+			// ================= CHECK-IN =================
+			if (newStatus === "Checked In") {
+				updatedBooking.status = "Checked In";
 
-		await axios.put(
-			`${API}/api/rooms/${room._id}`,
-			{
-				bookedRooms: Math.max(0, room.bookedRooms - 1)
-			},
-			{
-				headers: {
-					Authorization: `Bearer ${token}`
+				// Assign room if not assigned
+				if (!updatedBooking.roomno) {
+					updatedBooking.roomno = getAvailableRoomNo(
+						booking.room,
+						booking.checkin,
+						booking.checkout
+					);
 				}
+
+				// ✅ STORE ACTUAL CHECK-IN DATE & TIME
+				const now = new Date();
+				updatedBooking.actualCheckIn = now.toISOString();
+				updatedBooking.checkInTime = getTimeNow();
+
+				await fetchRooms();
 			}
-		);
-	}
 
-setRooms(prev =>
-	prev.map(r =>
-		r._id === room._id
-			? { ...r, bookedRooms: Math.max(0, r.bookedRooms - 1) }
-			: r
-	)
-);
+			// ================= CHECK-OUT =================
+			if (newStatus === "Checked Out") {
+				updatedBooking.status = "Checked Out";
 
-}
+				const now = new Date();
 
-		await axios.put(`${API}/api/bookings/${id}`, updatedBooking);
-		setBookings((prev) =>
-			prev.map((b) => (b._id === id ? updatedBooking : b))
-		);
-		
-	} catch (err) {
-		console.error("Error updating status:", err);
-	}
-};
+				// ✅ STORE ACTUAL CHECK-OUT
+				updatedBooking.actualCheckOut = now.toISOString();
+				updatedBooking.checkOutTime = now.toISOString();
+
+				// ✅ USE ACTUAL DATES FOR BILL
+				const roomBill = calculateBill(
+					updatedBooking.actualCheckIn || booking.checkin,
+					updatedBooking.actualCheckOut,
+					booking.room
+				);
+
+				const activitiesBill =
+					(updatedBooking.activities || []).reduce((sum, a) => sum + a.price, 0);
+
+				const totalBill = roomBill + activitiesBill;
+
+				updatedBooking.totalBill = totalBill;
+
+			}
+
+			await axios.put(`${API}/api/bookings/${id}`, updatedBooking);
+
+			setBookings((prev) =>
+				prev.map((b) => (b._id === id ? updatedBooking : b))
+			);
+
+			await fetchRooms();
+
+		} catch (err) {
+			console.error("Error updating status:", err);
+		}
+	};
+
+
+	const cancelBooking = async (id) => {
+		if (window.confirm("Are you sure you want to cancel this booking?")) {
+			try {
+				await axios.put(`${API}/api/bookings/${id}/cancel`);
+				setBookings((prev) =>
+					prev.map((b) => (b._id === id ? { ...b, status: "Cancelled" } : b))
+				);
+				await fetchRooms();
+			} catch (err) {
+				console.error("Error cancelling booking:", err);
+				alert(err.response?.data?.message || "Cancel failed");
+			}
+		}
+	};
 
 	const handlePreview = (fileUrl, type) => {
 		setPreviewType(type);
@@ -244,6 +293,11 @@ setRooms(prev =>
 			data.append("checkin", form.checkin);
 			data.append("checkout", form.checkout);
 			data.append("noOfPersons", form.noOfPersons);
+			data.append("activities", JSON.stringify(selectedActivities.map(a => ({
+				activityId: a._id || a.activityId,
+				name: a.name,
+				price: a.price
+			}))));
 
 			// Only append file if selected
 			if (form.docFile instanceof File) {
@@ -274,6 +328,7 @@ setRooms(prev =>
 				noOfPersons: 1,
 				docFile: null,
 			});
+			setSelectedActivities([]);
 
 		} catch (err) {
 			console.error("Error saving booking:", err);
@@ -293,6 +348,7 @@ setRooms(prev =>
 			docFile: null,
 		});
 		setEditingId(b._id);
+		setSelectedActivities(b.activities || []);
 	};
 
 	const handleDelete = async (id) => {
@@ -405,103 +461,134 @@ setRooms(prev =>
 				</div>
 
 				<div className="addBook">
-				<form onSubmit={handleFormSubmit} className="booking-form">
-					<input
-						type="text"
-						placeholder="Name"
-						value={form.name}
-						maxLength={50}
-						pattern="[A-Za-z ]{1,50}"
-						onChange={(e) => {
-							const cleaned = e.target.value.replace(/[^A-Za-z ]/g, "");
-							setForm({ ...form, name: cleaned });
-						}}
-						required
-					/>
-					<input
-						type="tel"
-						placeholder="Contact Number"
-						pattern="[0-9]{10}" maxLength="10"
-						value={form.contact}
-						onChange={(e) => {
-							const cleaned = e.target.value.replace(/[^0-9]/g, "");
-							setForm({ ...form, contact: cleaned }) }
-						}
-						required
-					/>
-					<select
-						value={form.room}
-						onChange={(e) => setForm({ ...form, room: e.target.value })}
-					>
-						<option value="">Select Room</option>
-						{rooms.map((room) => (
-							<option key={room._id} value={room.title}>
-								{room.title}
-							</option>
-						))}
-					</select>
-					<input
-						type="number"
-						min="1"
-						max="4"
-						placeholder="Number of Persons"
-						value={form.noOfPersons}
-						onChange={(e) => {
-							const val = e.target.value;
-							if ((/^\d+$/.test(val) && +val >= 1 && +val <= 4)) {
-								setForm({ ...form, noOfPersons: val === "" ? "" : +val });
-							}
+					<form onSubmit={handleFormSubmit} className="booking-form">
+						<input
+							type="text"
+							placeholder="Name"
+							value={form.name}
+							maxLength={50}
+							pattern="[A-Za-z ]{1,50}"
+							onChange={(e) => {
+								const cleaned = e.target.value.replace(/[^A-Za-z ]/g, "");
+								setForm({ ...form, name: cleaned });
 							}}
-						required
-					/>
-					<div style={{ display: "flex", gap: "10px" }}>
+							required
+						/>
+						<input
+							type="tel"
+							placeholder="Contact Number"
+							pattern="[0-9]{10}" maxLength="10"
+							value={form.contact}
+							onChange={(e) => {
+								const cleaned = e.target.value.replace(/[^0-9]/g, "");
+								setForm({ ...form, contact: cleaned })
+							}
+							}
+							required
+						/>
+						<select
+							value={form.room}
+							onChange={(e) => setForm({ ...form, room: e.target.value })}
+						>
+							<option value="">Select Room</option>
+							{rooms.map((room) => (
+								<option key={room._id} value={room.title}>
+									{room.title}
+								</option>
+							))}
+						</select>
 						<input
 							type="number"
-							placeholder="Room No (Manual or Auto)"
-							value={form.roomno}
-							onChange={(e) => setForm({ ...form, roomno: e.target.value })}
+							min="1"
+							max="4"
+							placeholder="Number of Persons"
+							value={form.noOfPersons}
+							onChange={(e) => {
+								const val = e.target.value;
+								if ((/^\d+$/.test(val) && +val >= 1 && +val <= 4)) {
+									setForm({ ...form, noOfPersons: val === "" ? "" : +val });
+								}
+							}}
+							required
+						/>
+						<div style={{ display: "flex", gap: "10px" }}>
+							<input
+								type="number"
+								placeholder="Room No (Manual or Auto)"
+								value={form.roomno}
+								onChange={(e) => setForm({ ...form, roomno: e.target.value })}
+							/>
+
+							<button type="button" onClick={generateRoomNo}>
+								Auto Assign
+							</button>
+						</div>
+						<input
+							type="date"
+							value={form.checkin}
+							onChange={(e) => setForm({ ...form, checkin: e.target.value })}
+							min={new Date().toISOString().split("T")[0]}
+							required
+						/>
+						<input
+							type="date"
+							value={form.checkout}
+							min={form.checkin || new Date().toISOString().split("T")[0]}
+							onChange={(e) => setForm({ ...form, checkout: e.target.value })}
+							required
 						/>
 
-						<button type="button" onClick={generateRoomNo}>
-							Auto Assign
-						</button>
-					</div>
-					<input
-						type="date"
-						value={form.checkin}
-						onChange={(e) => setForm({ ...form, checkin: e.target.value })}
-						min={new Date().toISOString().split("T")[0]}
-						required
-					/>
-					<input
-						type="date"
-						value={form.checkout}
-						min={form.checkin || new Date().toISOString().split("T")[0]}
-						onChange={(e) => setForm({ ...form, checkout: e.target.value })}
-						required
-					/>
-					<input
-						type="file"
-						accept="application/pdf,image/*"
-						onChange={(e) => {
-							const file = e.target.files[0];
-							if (!file) return;
-							if (!["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
-								alert("Only PDF and image files are allowed.");
-								e.target.value = null;
-								return;
-							}
-							if (file.size > 1024 * 1024) {
-								alert("File size must be 1 MB or less.");
-								e.target.value = null;
-								return;
-							}
-							setForm({ ...form, docFile: file });
-						}}
-						{...(editingId === null ? { required: true } : {})}
-					/>
-					<button type="submit">{editingId ? "Update" : "Add"} Booking</button>
-				</form>
+						{activities.length > 0 && (
+							<div style={{ background: "#f8f8f8", padding: "10px", borderRadius: "5px", border: "1px solid #ddd", textAlign: "left" }}>
+								<label style={{ fontWeight: "bold", display: "block", marginBottom: "5px" }}>Add Activities:</label>
+								<div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+									{activities.map(act => {
+										const actId = act._id || act.activityId;
+										const isSelected = !!selectedActivities.find(a => a._id === actId || a.activityId === actId);
+										return (
+											<div key={actId} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+												<input
+													type="checkbox"
+													checked={isSelected}
+													onChange={() => {
+														if (isSelected) {
+															setSelectedActivities(prev => prev.filter(a => a._id !== actId && a.activityId !== actId));
+														} else {
+															setSelectedActivities(prev => [...prev, act]);
+														}
+													}}
+													style={{ width: "auto" }}
+												/>
+												<span style={{ fontSize: "14px" }}>{act.name} (+₹{act.price})</span>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						)}
+
+						<input
+							type="file"
+							accept="application/pdf,image/*"
+							onChange={(e) => {
+								const file = e.target.files[0];
+								if (!file) return;
+								if (!["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+									alert("Only PDF and image files are allowed.");
+									e.target.value = null;
+									return;
+								}
+								if (file.size > 1024 * 1024) {
+									alert("File size must be 1 MB or less.");
+									e.target.value = null;
+									return;
+								}
+								setForm({ ...form, docFile: file });
+							}}
+							{...(editingId === null ? { required: true } : {})}
+						/>
+						<button type="submit">{editingId ? "Update" : "Add"} Booking</button>
+					</form>
 				</div>
 
 				<div className="secTt">
@@ -525,102 +612,109 @@ setRooms(prev =>
 							<th>Actions</th>
 						</tr>
 					</thead>
-<tbody>
-  {bookings.length === 0 ? (
-    <tr>
-      <td colSpan="13" style={{ textAlign: "center" }}>
-        No booking records found
-      </td>
-    </tr>
-  ) : (
-    bookings.map((b) => {
-      // Parse the check-in/out times
-      const checkIn = b.checkInTime ? new Date(b.checkInTime) : null;
-      const checkOut = b.checkOutTime ? new Date(b.checkOutTime) : null;
+					<tbody>
+						{bookings.length === 0 ? (
+							<tr>
+								<td colSpan="13" style={{ textAlign: "center" }}>
+									No booking records found
+								</td>
+							</tr>
+						) : (
+							bookings.map((b) => {
+								// Parse the check-in/out times
+								const checkIn = b.checkInTime ? new Date(b.checkInTime) : null;
+								const checkOut = b.checkOutTime ? new Date(b.checkOutTime) : null;
 
-      // Format as "YYYY-MM-DD HH:MM"
-const formatDateTime = (iso) => {
-	if (!iso) return "-";
-	const d = new Date(iso);
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
+								// Format as "YYYY-MM-DD HH:MM"
+								const formatDateTime = (iso) => {
+									if (!iso) return "-";
+									const d = new Date(iso);
+									return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+								};
 
-
-      return (
-        <tr key={b._id}>
-          <td>{b.name}</td>
-          <td>{b.contact}</td>
-          <td>{b.room}</td>
-          <td>{b.roomno || "-"}</td>
-          <td>{b.noOfPersons}</td>
-<td>{formatDateTime(b.checkInTime)}</td>
-<td>{formatDateTime(b.checkOutTime)}</td>
-          <td>{b.totalBill ? `₹ ${b.totalBill}` : "-"}</td>
-          <td>
-            <span className={`status ${b.status?.toLowerCase().replace(" ", "-")}`}>
-              {b.status}
-            </span>
-          </td>
-          <td>
-            {b.docFile && (
-              <button onClick={() => handlePreview(b.docFile, b.docType)}>View</button>
-            )}
-          </td>
-          <td>
-            {b.status === "Pending" && (
-              <button onClick={() => updateStatus(b._id, "Checked In")}>Check In</button>
-            )}
-            {b.status === "Checked In" && (
-              <button onClick={() => updateStatus(b._id, "Checked Out")}>Check Out</button>
-            )}
-            <button onClick={() => handleEdit(b)}>Edit</button>
-            <button onClick={() => handleDelete(b._id)}>Delete</button>
-          </td>
-        </tr>
-      );
-    })
-  )}
-</tbody>
+								return (
+									<tr key={b._id}>
+										<td>{b.name}</td>
+										<td>{b.contact}</td>
+										<td>{b.room}</td>
+										<td>{b.roomno || "-"}</td>
+										<td>{b.noOfPersons}</td>
+										<td>{formatDateTime(b.checkInTime)}</td>
+										<td>{formatDateTime(b.checkOutTime)}</td>
+										<td>{b.totalBill ? `₹ ${b.totalBill}` : "-"}</td>
+										<td>
+											<span className={`status ${b.status?.toLowerCase().replace(" ", "-")}`}>
+												{b.status}
+											</span>
+										</td>
+										<td>
+											{b.docFile && (
+												<button onClick={() => handlePreview(b.docFile, b.docType)}>View</button>
+											)}
+										</td>
+										<td>
+											{b.status === "Pending" && (
+												<>
+													<button onClick={() => updateStatus(b._id, "Checked In")}>Check In</button>
+													<button onClick={() => cancelBooking(b._id)} style={{ backgroundColor: "orange" }}>Cancel</button>
+												</>
+											)}
+											{b.status === "Checked In" && (
+												<button onClick={() => updateStatus(b._id, "Checked Out")}>Check Out</button>
+											)}
+											{b.status === "Checked Out" && (
+												<a href={`${API}/api/pdfs/invoice/${b._id}`} target="_blank" rel="noreferrer">
+													<button style={{ backgroundColor: "green", color: "white" }}>Invoice PDF</button>
+												</a>
+											)}
+											<button onClick={() => handleEdit(b)}>Edit</button>
+											<button onClick={() => handleDelete(b._id)}>Delete</button>
+										</td>
+									</tr>
+								);
+							})
+						)}
+					</tbody>
 				</table>
 
-				
+
 				<div className="secTt">
 					<h2 style={{ marginTop: "20px" }}>Add / Edit Guest</h2>
 				</div>
 				<div className="addBook">
-				<form onSubmit={submitGuest} className="booking-form">
-					<input name="bookerName" placeholder="Booker Name" value={guestForm.bookerName} onChange={handleGuestChange} required />
-					<input name="bookerContact" placeholder="Booker Contact" value={guestForm.bookerContact} onChange={handleGuestChange} required />
-					<input name="memberName" placeholder="Guest Name" value={guestForm.memberName} onChange={handleGuestChange} required />
-					<input name="memberContact" placeholder="Guest Contact" value={guestForm.memberContact} onChange={handleGuestChange} />
-					<input name="memberAge" type="number" placeholder="Age" value={guestForm.memberAge} onChange={handleGuestChange} required />
+					<form onSubmit={submitGuest} className="booking-form">
+						<input name="bookerName" placeholder="Booker Name" value={guestForm.bookerName} onChange={handleGuestChange} required />
+						<input name="bookerContact" placeholder="Booker Contact" value={guestForm.bookerContact} onChange={handleGuestChange} required />
+						<input name="memberName" placeholder="Guest Name" value={guestForm.memberName} onChange={handleGuestChange} required />
+						<input name="memberContact" placeholder="Guest Contact" value={guestForm.memberContact} onChange={handleGuestChange} />
+						<input name="memberAge" type="number" placeholder="Age" value={guestForm.memberAge} onChange={handleGuestChange} required />
 
-					<select name="memberGender" value={guestForm.memberGender} onChange={handleGuestChange} required>
-						<option value="">Gender</option>
-						<option>Male</option>
-						<option>Female</option>
-						<option>Other</option>
-					</select>
+						<select name="memberGender" value={guestForm.memberGender} onChange={handleGuestChange} required>
+							<option value="">Gender</option>
+							<option>Male</option>
+							<option>Female</option>
+							<option>Other</option>
+						</select>
 
-					<input name="roomNo" placeholder="Room No" value={guestForm.roomNo} onChange={handleGuestChange} required />
-					<input type="date" name="checkin" value={guestForm.checkin} onChange={handleGuestChange} required />
-					<input type="date" name="checkout" value={guestForm.checkout} onChange={handleGuestChange} required />
+						<input name="roomNo" placeholder="Room No" value={guestForm.roomNo} onChange={handleGuestChange} required />
+						<input type="date" name="checkin" value={guestForm.checkin} onChange={handleGuestChange} required />
+						<input type="date" name="checkout" value={guestForm.checkout} onChange={handleGuestChange} required />
 
-					<button type="submit">
-						{editingGuestId ? "Update Guest" : "Add Guest"}
-					</button>
+						<button type="submit">
+							{editingGuestId ? "Update Guest" : "Add Guest"}
+						</button>
 
-					{editingGuestId && (
-						<button type="button" onClick={resetGuestForm}>Cancel</button>
-					)}
-				</form>
-				
+						{editingGuestId && (
+							<button type="button" onClick={resetGuestForm}>Cancel</button>
+						)}
+					</form>
+
 				</div>
 
 				<div className="secTt">
 					<h2 style={{ marginTop: "20px" }}>Guest Details</h2>
 				</div>
-				
+
 
 				<table>
 					<thead>
@@ -666,7 +760,7 @@ const formatDateTime = (iso) => {
 						)}
 					</tbody>
 				</table>
-					
+
 
 
 

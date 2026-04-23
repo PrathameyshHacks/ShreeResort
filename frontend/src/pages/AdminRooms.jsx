@@ -6,16 +6,16 @@ import { useNavigate } from "react-router-dom";
 
 export default function AdminRooms() {
 
-const navigate = useNavigate();
+	const navigate = useNavigate();
 
 	useEffect(() => {
-	const token = localStorage.getItem("adminToken");
-	if (!token) {
-	  navigate("/login"); // redirect if token is missing
-	}
-  }, [navigate]);
+		const token = localStorage.getItem("adminToken");
+		if (!token) {
+			navigate("/login"); // redirect if token is missing
+		}
+	}, [navigate]);
 
-  const API = process.env.REACT_APP_API_URL;
+	const API = process.env.REACT_APP_API_URL;
 
 
 	const [rooms, setRooms] = useState([]);
@@ -38,7 +38,7 @@ const navigate = useNavigate();
 	const [selectedDate, setSelectedDate] = useState(
 		new Date().toISOString().split("T")[0]
 	);
-	
+
 	const [dayBookings, setDayBookings] = useState([]);
 
 
@@ -143,21 +143,21 @@ const navigate = useNavigate();
 		}
 	};
 
-const handleEdit = (room) => {
-	setFormData({
-		id: room._id || null,
-		title: room.title || "",
-		category: room.category || "",
-		price: room.price || "",
-		images: [], // important fix
-		description: room.description || "",
-		totalRooms: room.totalRooms || 1,
-		bookedRooms: room.bookedRooms || 0,
-		startRoomNo: room.roomNumbers?.[0] || "", // 🔥 important
-	});
-	setIsEditing(true);
-	setFileError("");
-};
+	const handleEdit = (room) => {
+		setFormData({
+			id: room._id || null,
+			title: room.title || "",
+			category: room.category || "",
+			price: room.price || "",
+			images: [], // important fix
+			description: room.description || "",
+			totalRooms: room.totalRooms || 1,
+			bookedRooms: room.bookedRooms || 0,
+			startRoomNo: room.roomNumbers?.[0] || "", // 🔥 important
+		});
+		setIsEditing(true);
+		setFileError("");
+	};
 
 	const handleDelete = async (id) => {
 		if (window.confirm("Are you sure you want to delete this room?")) {
@@ -180,8 +180,8 @@ const handleEdit = (room) => {
 		let newTotal =
 			type === "inc" ? room.totalRooms + 1 : room.totalRooms - 1;
 
-		// Minimum = booked rooms OR 1
-		const minRooms = Math.max(room.bookedRooms || 0, 1);
+		// Set minimum to 1 since we handle availability dynamically
+		const minRooms = 1;
 
 		// Clamp value between minRooms and 20
 		newTotal = Math.min(20, Math.max(minRooms, newTotal));
@@ -219,36 +219,36 @@ const handleEdit = (room) => {
 
 	// new codes !
 	useEffect(() => {
-	fetchAvailability();
+		fetchAvailability();
 	}, [selectedDate]);
 
-const fetchAvailability = async () => {
-	try {
-		const res = await axios.get(
-			`${API}/api/bookings/availability/${selectedDate}`,
-			{ headers: { Authorization: `Bearer ${token}` } }
-		);
-		setDayBookings(res.data);
-	} catch (err) {
-		console.error("Availability fetch error:", err);
-	}
-};
+	const fetchAvailability = async () => {
+		try {
+			const res = await axios.get(
+				`${API}/api/bookings/availability/${selectedDate}`,
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			setDayBookings(res.data);
+		} catch (err) {
+			console.error("Availability fetch error:", err);
+		}
+	};
 
 
 
-const getBookedCountForRoom = (roomTitle) => {
-	const booking = dayBookings.find(b => b.room === roomTitle);
-	return booking ? booking.count : 0;
-};
+	const getBookedCountForRoom = (roomTitle) => {
+		const booking = dayBookings.find(b => b.room === roomTitle);
+		return booking ? booking.count : 0;
+	};
 
 
-const changeDateBy = (days) => {
-	const date = new Date(selectedDate);
-	date.setDate(date.getDate() + days);
+	const changeDateBy = (days) => {
+		const date = new Date(selectedDate);
+		date.setDate(date.getDate() + days);
 
-	const newDate = date.toISOString().split("T")[0];
-	setSelectedDate(newDate);
-};
+		const newDate = date.toISOString().split("T")[0];
+		setSelectedDate(newDate);
+	};
 
 	return (
 		<>
@@ -368,61 +368,61 @@ const changeDateBy = (days) => {
 				</div>
 
 
-<div className="availability-section">
-	<h2>📅 Room Availability</h2>
+				<div className="availability-section">
+					<h2>📅 Room Availability</h2>
 
-	<div className="date-picker">
-		<label>Select Date: </label>
-		<button onClick={() => changeDateBy(-1)} disabled={selectedDate <= today} >−</button>
+					<div className="date-picker">
+						<label>Select Date: </label>
+						<button onClick={() => changeDateBy(-1)} disabled={selectedDate <= today} >−</button>
 
-		<input
-			type="date"
-			value={selectedDate}
-			min={today}
-			onChange={(e) => setSelectedDate(e.target.value)}
-		/>
+						<input
+							type="date"
+							value={selectedDate}
+							min={today}
+							onChange={(e) => setSelectedDate(e.target.value)}
+						/>
 
-		<button onClick={() => changeDateBy(1)}>+</button>
-	</div>
+						<button onClick={() => changeDateBy(1)}>+</button>
+					</div>
 
-	<table>
-		<thead>
-			<tr>
-				<th>Room</th>
-				<th>Total Rooms</th>
-				<th>Booked</th>
-				<th>Vacant</th>
-				<th>Status</th>
-			</tr>
-		</thead>
-		<tbody>
-			{rooms.map((room) => {
-				const booked = getBookedCountForRoom(room.title);
-				const vacant = room.totalRooms - booked;
+					<table>
+						<thead>
+							<tr>
+								<th>Room</th>
+								<th>Total Rooms</th>
+								<th>Booked</th>
+								<th>Vacant</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
+							{rooms.map((room) => {
+								const booked = getBookedCountForRoom(room.title);
+								const vacant = room.totalRooms - booked;
 
-				return (
-					<tr key={room._id}>
-						<td>{room.title}</td>
-						<td>{room.totalRooms}</td>
-						<td className="booked">{booked}</td>
-						<td className="vacant">{vacant}</td>
-						<td>
-							{vacant > 0 ? (
-								<span className="vacant">Available</span>
-							) : (
-								<span className="booked">Full</span>
-							)}
-						</td>
-					</tr>
-				);
-			})}
-		</tbody>
-	</table>
-</div>
+								return (
+									<tr key={room._id}>
+										<td>{room.title}</td>
+										<td>{room.totalRooms}</td>
+										<td className="booked">{booked}</td>
+										<td className="vacant">{vacant}</td>
+										<td>
+											{vacant > 0 ? (
+												<span className="vacant">Available</span>
+											) : (
+												<span className="booked">Full</span>
+											)}
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
 
 
 
-</div>
+			</div>
 			<Footer />
 
 			<style>{`

@@ -12,6 +12,8 @@ import AboutPage from "./components/AboutPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminSignUp from "./pages/AdminSign";
 import AdminProfile from "./pages/AdminProfile";
+import AdminActivities from "./pages/AdminActivities";
+import MyBookings from "./pages/MyBookings";
 
 
 export default function App() {
@@ -25,9 +27,11 @@ export default function App() {
 				<Route path="/admin" element={<AdminDashboard />} />
 				<Route path="/admin/bookings" element={<AdminBookings />} />
 				<Route path="/admin/rooms" element={<AdminRooms />} />
+				<Route path="/admin/activities" element={<AdminActivities />} />
 				<Route path="/admin/reports" element={<AdminReports />} />
 				<Route path="/admin/profile" element={<AdminProfile />} />
 				<Route path="/tourist" element={<TouristPage />} />
+				<Route path="/my-bookings" element={<MyBookings />} />
 				<Route path="/login" element={<AdminLogin/>}/>
 				<Route path="/signin" element={<AdminSignUp/>}/>
 			</Routes>

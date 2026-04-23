@@ -1,3 +1,4 @@
+//booking.jsx
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -21,6 +22,10 @@ export default function BookingPage() {
 	const [zoomImage, setZoomImage] = useState(null);
 
 	const [availabilityMap, setAvailabilityMap] = useState({});
+
+	const [activities, setActivities] = useState([]);
+	const [selectedActivities, setSelectedActivities] = useState([]);
+	const [bookingSuccessData, setBookingSuccessData] = useState(null);
 
 	const [formData, setFormData] = useState({
 		name: "",
@@ -48,8 +53,20 @@ export default function BookingPage() {
 				setLoading(false); // ✅ ALWAYS runs
 			}
 		};
-	
+
 		fetchRooms();
+	}, []);
+
+	useEffect(() => {
+		const fetchActivities = async () => {
+			try {
+				const res = await axios.get(`${API}/api/activities`);
+				setActivities(res.data);
+			} catch (err) {
+				console.error("ACTIVITY FETCH ERROR:", err);
+			}
+		};
+		fetchActivities();
 	}, []);
 
 
@@ -122,6 +139,16 @@ export default function BookingPage() {
 		const d = new Date(formData.checkin);
 		d.setDate(d.getDate() + 10);
 		return d.toISOString().split("T")[0];
+	};
+
+	const handleActivityToggle = (activity) => {
+		setSelectedActivities((prev) => {
+			if (prev.find((a) => a._id === activity._id)) {
+				return prev.filter((a) => a._id !== activity._id);
+			} else {
+				return [...prev, activity];
+			}
+		});
 	};
 
 	/* ================= INPUT HANDLERS ================= */
@@ -206,30 +233,30 @@ export default function BookingPage() {
 	/* ================= SUBMIT ================= */
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-	
+
 		if (!selectedRoom) {
 			alert("Please select a room");
 			return;
 		}
-	
+
 		if (formData.checkin < today) {
 			alert("Check-in date cannot be past");
 			return;
 		}
-	
+
 		if (new Date(formData.checkout) <= new Date(formData.checkin)) {
 			alert("Check-out must be after check-in");
 			return;
 		}
-	
+
 		if (!formData.idfile) {
 			alert("Upload ID proof");
 			return;
 		}
-	
+
 		try {
 			const data = new FormData();
-		
+
 			data.append("name", formData.name);
 			data.append("contact", formData.contact);
 			data.append("room", selectedRoom.title);
@@ -239,13 +266,18 @@ export default function BookingPage() {
 			data.append("child", formData.numChildren);
 			data.append("docFile", formData.idfile);
 			data.append("members", JSON.stringify(formData.members));
-		
-			await axios.post(`${API}/api/bookings`, data, {
+			data.append("activities", JSON.stringify(selectedActivities.map(a => ({
+				activityId: a._id,
+				name: a.name,
+				price: a.price
+			}))));
+
+			const res = await axios.post(`${API}/api/bookings`, data, {
 				headers: { "Content-Type": "multipart/form-data" }
 			});
-		
-			alert(`✅ Booking Confirmed for ${selectedRoom.title}`);
-		
+
+			setBookingSuccessData(res.data.booking);
+
 			setFormData({
 				name: "",
 				contact: "",
@@ -258,9 +290,10 @@ export default function BookingPage() {
 				idfile: null,
 				members: []
 			});
-		
+			setSelectedActivities([]);
+
 			setIsModalOpen(false);
-		
+
 		} catch (err) {
 			console.error(err);
 			alert(err.response?.data?.message || "❌ Booking failed");
@@ -276,49 +309,78 @@ export default function BookingPage() {
 				<h1>🛏️ Book Your Stay</h1>
 
 				{loading ? <p>Loading rooms...</p> : (
-				<div className="room-list">
-					{rooms.map(room => {
-						const status = getAvailabilityStatus(room);
-					
-						return (
-							<div key={room._id} className="room-card">
+					<div className="room-list">
+						{rooms.map(room => {
+							const status = getAvailabilityStatus(room);
 
-								<img
-									src={room.images?.[0]}
-									alt={room.title}
-									onClick={() => {
-										setSelectedRoom(room);
-										setCurrentImageIndex(0);
-										setShowImageModal(true);
-									}}
-								/>
+							return (
+								<div key={room._id} className="room-card">
 
-								<h3>{room.title}</h3>
-								<p>{room.description}</p>
-								<p className="price">₹ {room.price} / night</p>
-								
-								{/* 🔥 AVAILABILITY STATUS */}
-								<p className={`availability ${status.type}`}>
-									{status.type === "available" && `✅ ${status.count} rooms available`}
-									{status.type === "days" && `❌ Fully booked for next ${status.count} days`}
-									{status.type === "week" && `❌ No rooms available this week`}
-									{status.type === "full" && `❌ Fully booked today`}
-								</p>
-								
-								<button
-									disabled={status.type !== "available"}
-									onClick={() => {
-										setSelectedRoom(room);
-										setIsModalOpen(true);
-									}}
-								>
-									{status.type === "available" ? "Book Now" : "Not Available"}
-								</button>
-								
-							</div>
-						);
-					})}
-				</div>
+									<img
+										src={room.images?.[0]}
+										alt={room.title}
+										onClick={() => {
+											setSelectedRoom(room);
+											setCurrentImageIndex(0);
+											setShowImageModal(true);
+										}}
+									/>
+
+									<h3>{room.title}</h3>
+									<p>{room.description}</p>
+									<p className="price">₹ {room.price} / night</p>
+
+									{/* 🔥 AVAILABILITY STATUS */}
+									<p className={`availability ${status.type}`}>
+										{status.type === "available" && `✅ ${status.count} rooms available`}
+										{status.type === "days" && `❌ Fully booked for next ${status.count} days`}
+										{status.type === "week" && `❌ No rooms available this week`}
+										{status.type === "full" && `❌ Fully booked today`}
+									</p>
+
+									<button
+										disabled={status.type !== "available"}
+										onClick={() => {
+											setSelectedRoom(room);
+											setIsModalOpen(true);
+										}}
+									>
+										{status.type === "available" ? "Book Now" : "Not Available"}
+									</button>
+
+								</div>
+							);
+						})}
+					</div>
+				)}
+
+				{activities.length > 0 && (
+					<>
+						<h1 style={{ marginTop: "40px" }}>🎢 Fun & Tourism Activities</h1>
+						<div className="room-list">
+							{activities.map(act => {
+								const isSelected = !!selectedActivities.find(a => a._id === act._id);
+								return (
+									<div key={act._id} className="room-card">
+										<img
+											src={act.images?.[0]}
+											alt={act.name}
+										/>
+										<h3>{act.name}</h3>
+										<p>{act.description}</p>
+										<p>📍 {act.location} | ⏳ {act.duration}</p>
+										<p className="price">₹ {act.price}</p>
+										<button
+											style={{ backgroundColor: isSelected ? "#28a745" : "#0a4d91" }}
+											onClick={() => handleActivityToggle(act)}
+										>
+											{isSelected ? "✅ Added to Stay" : "Add to Stay"}
+										</button>
+									</div>
+								);
+							})}
+						</div>
+					</>
 				)}
 			</div>
 
@@ -327,7 +389,7 @@ export default function BookingPage() {
 				<div className="image-modal-overlay" onClick={() => setShowImageModal(false)}>
 					<div className="image-modal" onClick={e => e.stopPropagation()}>
 						<h2>{selectedRoom.title}</h2>
-			
+
 						<div className="slider-container">
 
 							{/* PREV BUTTON */}
@@ -341,7 +403,7 @@ export default function BookingPage() {
 							>
 								❮
 							</button>
-							
+
 							{/* MAIN IMAGE */}
 							<img
 								src={selectedRoom.images[currentImageIndex]}
@@ -362,7 +424,7 @@ export default function BookingPage() {
 								❯
 							</button>
 						</div>
-							
+
 						{/* THUMBNAILS */}
 						<div className="thumbnail-row">
 							{selectedRoom.images.map((img, i) => (
@@ -374,7 +436,7 @@ export default function BookingPage() {
 								/>
 							))}
 						</div>
-						
+
 						<button className="close-btn" onClick={() => setShowImageModal(false)}>
 							Close
 						</button>
@@ -475,12 +537,46 @@ export default function BookingPage() {
 								</button>
 							</div>
 
+							{/* ACTIVITIES */}
+							{selectedActivities.length > 0 && (
+								<div className="activities-section" style={{ background: "#eef", padding: "10px", borderRadius: "5px", marginBottom: "10px" }}>
+									<h3 style={{ margin: "0 0 10px 0" }}>Selected Activities:</h3>
+									<ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+										{selectedActivities.map(act => (
+											<li key={act._id}>✅ {act.name} (+₹{act.price})</li>
+										))}
+									</ul>
+								</div>
+							)}
+
 							<input type="file" accept=".jpg,.png,.pdf"
 								onChange={handleFileChange} required />
 
 							<button type="submit">Confirm Booking</button>
 							<button type="button" onClick={() => setIsModalOpen(false)}>Cancel</button>
 						</form>
+					</div>
+				</div>
+			)}
+
+			{/* SUCCESS MODAL */}
+			{bookingSuccessData && (
+				<div className="modal-overlay">
+					<div className="modal success-modal">
+						<h2>🎉 Booking Successful!</h2>
+						<p><strong>Booking ID:</strong> {bookingSuccessData._id}</p>
+						<p>Your room has been reserved successfully.</p>
+						
+						<div style={{ marginTop: "20px", display: "flex", gap: "15px", justifyContent: "center" }}>
+							<a 
+								href={`${API}/api/pdfs/booking/${bookingSuccessData._id}`} 
+								target="_blank" 
+								rel="noreferrer"
+							>
+								<button style={{ background: "#28a745" }}>Download Confirmation PDF</button>
+							</a>
+							<button onClick={() => setBookingSuccessData(null)}>Close</button>
+						</div>
 					</div>
 				</div>
 			)}

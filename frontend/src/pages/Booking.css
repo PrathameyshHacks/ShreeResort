@@ -405,6 +405,20 @@ body {
 	color: red;
 }
 
+.availability.limited {
+	color: #e67e22; /* Orange for limited rooms */
+}
+
+.cancel-btn {
+	background-color: #e74c3c !important;
+	color: white;
+}
+
+.invoice-btn {
+	background-color: #27ae60 !important;
+	color: white;
+}
+
 button:disabled {
 	background: gray;
 	cursor: not-allowed;

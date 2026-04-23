@@ -17,6 +17,7 @@ export default function Navbar() {
 				<a href="/#features">Features</a>
 				<Link to="/about">About</Link>
 				<a href="/about/#contact-list">Contact</a>
+				<Link to="/my-bookings">My Bookings</Link>
 				<Link to="/booking" className="btn">Book Now</Link>
 			</nav>
 		</div>
